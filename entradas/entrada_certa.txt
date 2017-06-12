@@ -1,0 +1,60 @@
+package animais;
+
+import java.lang.System;
+import java.lang.Integer;
+
+abstract public class Animal {
+	protected String sound;
+}
+
+public class Dog implemens Animal {
+	// qtde de cachorros instanciados 
+	public static final Integer qtde = 0;
+	private int idade;
+	
+	Dog (){
+		this.idade = qtde * 7;
+		qtde++;
+		if (qtde == 1000){
+			System.out.println("Milesimo");
+		}
+	}
+	
+	public int getIdadeFutura(){
+		if (qtde > 23 && this.idade <= 76){
+			this.idade += 5
+			return this.idade; 
+		} else {
+			this.idade--;
+			return this.idade;
+		}
+		return null;
+	}
+}
+
+public class Pitbull extends Dog {
+	private int qtdeDentes;
+	private boolean vacinado = false;
+	
+	Pitbull(){
+		super();
+		int i = this.qtdeDentes + 8;
+		while (!true){}
+	}
+	
+	public void foiVacinado(){
+		this.vacinado = true;
+		this.qtdeDentes + 2;
+	}
+	
+}
+
+public class Main (){
+	public static void main ( String [] args ) {
+		char tipo = 'a';
+		Animal pitbull = new Pitbull();
+		if (pitbull instanceof Pitbull){
+			tipo = 'b';		
+		}
+	}
+}

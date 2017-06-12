@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 6.4.--><structure>
+	<type>fa</type>
+	<automaton>
+		<!--The list of states.-->
+		<state id="0" name="q0">
+			<x>61.0</x>
+			<y>146.0</y>
+		</state>
+		<state id="1" name="q1">
+			<x>181.0</x>
+			<y>141.0</y>
+		</state>
+		<state id="2" name="q2">
+			<x>292.0</x>
+			<y>135.0</y>
+		</state>
+		<state id="3" name="&lt;comment&gt;">
+			<x>391.0</x>
+			<y>74.0</y>
+		</state>
+		<state id="4" name="q4">
+			<x>68.0</x>
+			<y>475.0</y>
+		</state>
+		<state id="5" name="q5">
+			<x>250.0</x>
+			<y>348.0</y>
+		</state>
+		<state id="7" name="q7">
+			<x>243.0</x>
+			<y>407.0</y>
+		</state>
+		<state id="9" name="q9">
+			<x>245.0</x>
+			<y>295.0</y>
+		</state>
+		<state id="10" name="q10">
+			<x>238.0</x>
+			<y>718.0</y>
+		</state>
+		<state id="11" name="q11">
+			<x>484.0</x>
+			<y>716.0</y>
+		</state>
+		<state id="12" name="q12">
+			<x>455.0</x>
+			<y>657.0</y>
+		</state>
+		<state id="13" name="q13">
+			<x>433.0</x>
+			<y>291.0</y>
+		</state>
+		<state id="15" name="q15">
+			<x>431.0</x>
+			<y>347.0</y>
+		</state>
+		<state id="16" name="q16">
+			<x>243.0</x>
+			<y>469.0</y>
+		</state>
+		<state id="17" name="q17">
+			<x>243.0</x>
+			<y>583.0</y>
+		</state>
+		<state id="18" name="q18">
+			<x>347.0</x>
+			<y>578.0</y>
+		</state>
+		<state id="19" name="q19">
+			<x>292.0</x>
+			<y>671.0</y>
+		</state>
+		<state id="21" name="q21">
+			<x>448.0</x>
+			<y>608.0</y>
+		</state>
+		<state id="22" name="&lt;operator&gt;">
+			<x>578.0</x>
+			<y>456.0</y>
+		</state>
+		<state id="23" name="q23">
+			<x>241.0</x>
+			<y>528.0</y>
+		</state>
+		<!--The list of transitions.-->
+		<transition>
+			<from>12</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>2</to>
+			<read>/</read>
+		</transition>
+		<transition>
+			<from>19</from>
+			<to>21</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>1</to>
+			<read>/</read>
+		</transition>
+		<transition>
+			<from>17</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>18</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>19</from>
+			<to>12</to>
+			<read>+</read>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>3</to>
+			<read>'\n'</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>23</to>
+			<read>*</read>
+		</transition>
+		<transition>
+			<from>21</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>10</from>
+			<to>11</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>2</to>
+			<read>~('\n')</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>16</to>
+			<read>!</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>19</to>
+			<read>+</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>7</to>
+			<read>&gt;</read>
+		</transition>
+		<transition>
+			<from>5</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>13</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>15</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>16</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>9</to>
+			<read>&amp;</read>
+		</transition>
+		<transition>
+			<from>19</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>10</to>
+			<read>&lt;</read>
+		</transition>
+		<transition>
+			<from>11</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>17</from>
+			<to>18</to>
+			<read>-</read>
+		</transition>
+		<transition>
+			<from>23</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>9</from>
+			<to>13</to>
+			<read>&amp;</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>5</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>7</from>
+			<to>22</to>
+			<read>outro</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>17</to>
+			<read>-</read>
+		</transition>
+		<transition>
+			<from>5</from>
+			<to>15</to>
+			<read>=</read>
+		</transition>
+	</automaton>
+</structure>

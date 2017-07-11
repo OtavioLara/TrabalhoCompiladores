@@ -1,6 +1,6 @@
-package main;
+package lexico;
 
-import main.Constantes.TOKEN_CODIGO;
+import lexico.Constantes.TOKEN_CODIGO;
 
 public class Token extends IToken {
 	private TOKEN_CODIGO cod;
@@ -10,7 +10,11 @@ public class Token extends IToken {
 		this.cod = cod;
 		this.linha = linha;
 	}
-
+	
+	public TOKEN_CODIGO getCodigo() {
+		return this.cod;
+	}
+	
 	@Override
 	public String toString() {
 		return "<" + this.cod + ",'" + this.lexema + "', Linha: " + this.linha + ">";

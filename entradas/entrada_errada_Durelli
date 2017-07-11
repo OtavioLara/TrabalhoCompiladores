@@ -1,0 +1,14 @@
+// Copyright 2013 Bill Campbell, Swami Iyer and Bahar Akbal-Delibas
+
+package fail.casa.carro;
+import certo.apartamento.moto;
+
+public abstract public class teste extends pacote.classe.legal {
+
+	private int carro;
+	teste(){}
+	public void main(){
+		int bus;
+	}
+	public void getCarro(int carr, char a);
+}

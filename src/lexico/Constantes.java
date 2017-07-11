@@ -1,20 +1,28 @@
-package main;
+package lexico;
 
 import java.util.ArrayList;
 
 public class Constantes {
 
 	public static final ArrayList<String> reserved_word = new ArrayList<>();
-	
+	private Constantes(){
+		init();
+	}
+	public static Constantes getInstance() {
+        return constantesHolder.INSTANCE;
+    }
+	public enum MODFIERS {
+		PUBLIC, PRIVATE, PROTECTED, STATIC, ABSTRACT 
+	}
 	public enum TOKEN_CODIGO {
-		RESERVED_WORD, OPERATOR, SEPARATOR, IDENTIFICADOR, INT_LITERAL, CHAR_LITERAL, STRING_LITERAL, ERRO
+		RESERVED_WORD, OPERATOR, SEPARATOR, IDENTIFICADOR, INT_LITERAL, CHAR_LITERAL, STRING_LITERAL, ERRO, EOF
 	}
 	
 	public enum TOKEN_CODIGO_ERRO {
 		OPERADOR_INDEFINIDO, STRING_INDEFINIDA, SIMBOLO_INDEFINIDO, INDEFINIDO
 	}
 
-	public static void init() {
+	private void init() {
 		reserved_word.add("abstract");
 		reserved_word.add("boolean");
 		reserved_word.add("char");
@@ -40,4 +48,7 @@ public class Constantes {
 		reserved_word.add("void");
 		reserved_word.add("while");
 	}
+	private static class constantesHolder {
+        private static final Constantes INSTANCE = new Constantes();
+    }
 }

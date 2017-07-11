@@ -1,6 +1,6 @@
-package main;
+package lexico;
 
-import main.Constantes.TOKEN_CODIGO_ERRO;
+import lexico.Constantes.TOKEN_CODIGO_ERRO;
 
 public class TokenErro extends IToken {
 	private TOKEN_CODIGO_ERRO erro;

@@ -1,7 +1,7 @@
-package main;
+package lexico;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 
 public class TabelaSimbolos {
 	
@@ -21,7 +21,15 @@ public class TabelaSimbolos {
 	
 	@Override
 	public String toString() {
-		return memoria.toString();		
+		StringBuilder str = new StringBuilder();
+		Set<String> indentificadores = memoria.keySet();
+		str.append("Indentificador | Posição \n");
+		for(String ident : indentificadores){
+			str.append(ident+" : "+memoria.get(ident)+"\n");
+		}
+		return str.toString();
+		//return memoria.toString();		
 	}
 
 }
+	

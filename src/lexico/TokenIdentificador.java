@@ -1,6 +1,6 @@
-package main;
+package lexico;
 
-import main.Constantes.TOKEN_CODIGO;
+import lexico.Constantes.TOKEN_CODIGO;
 
 public class TokenIdentificador extends IToken {
 	private Constantes.TOKEN_CODIGO cod;
@@ -13,6 +13,9 @@ public class TokenIdentificador extends IToken {
 		this.linha = linha;
 	}
 	
+	public boolean match(TOKEN_CODIGO cod){
+		return this.cod.equals(cod);
+	}
 	@Override
 	public String toString() {
 		return "<" + this.cod + ", '" + this.lexema + "', Mem:" + this.posicaoMemoria + ", Linha:" + this.linha +">";

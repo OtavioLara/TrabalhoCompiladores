@@ -1,9 +1,9 @@
-package main;
+package lexico;
 
 import java.util.ArrayList;
 
-import main.Constantes.TOKEN_CODIGO;
-import main.Constantes.TOKEN_CODIGO_ERRO;
+import lexico.Constantes.TOKEN_CODIGO;
+import lexico.Constantes.TOKEN_CODIGO_ERRO;
 
 public class Lexico {
 
@@ -13,21 +13,21 @@ public class Lexico {
 	private TabelaSimbolos tabelaSimbolos;
 	private int linhaAtual;
 
-	public Lexico(char[] entrada) {
+	public Lexico(String nomeArq) {
+		char[] entrada = Entrada.getConteudoArquivo(nomeArq);
 		this.codEntrada = entrada;
 		this.pos = 0;
 		this.tokens = new ArrayList<>();
 		this.tabelaSimbolos = new TabelaSimbolos();
 		this.linhaAtual = 1;
 	}
-
 	public ArrayList<IToken> getAllTokens() {
 		int pos_bk = pos;
 		ArrayList<IToken> tokens_bk = this.tokens;
 		this.pos = 0;
 		this.tokens = new ArrayList<>();
 		IToken token = this.getNextToken();
-		while (token != null) {
+		while (token.tokenTipo() != TOKEN_CODIGO.EOF) {
 			token = this.getNextToken();
 		}
 		ArrayList<IToken> tokensFinal = this.tokens;
@@ -320,15 +320,17 @@ public class Lexico {
 				}
 			} else {
 				pos++;
-				return new TokenErro(String.valueOf(this.codEntrada[this.pos]), TOKEN_CODIGO_ERRO.INDEFINIDO,
+				return new TokenErro(String.valueOf(this.codEntrada[this.pos-1]), TOKEN_CODIGO_ERRO.INDEFINIDO,
 						this.linhaAtual);
 			}
 		}
-		return null;
+		IToken eof = new Token("EOF",TOKEN_CODIGO.EOF, linhaAtual); 
+		tokens.add(eof);
+		return eof;
 	}
 
 	public boolean isReservedWord(String id) {
-		return Constantes.reserved_word.contains(id);
+		return Constantes.getInstance().reserved_word.contains(id);
 	}
 
 	public TabelaSimbolos getTabelaSimbolos() {

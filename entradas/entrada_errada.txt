@@ -54,7 +54,8 @@ public class Main (){
 		char tipo = 'a;
 		Animal pitbull = new Pitbull();
 		if (pitbull instanceof Pitbull){
-			tipo = 'b'; /altera o tipo		
+			tipo = 'b'; /altera o tipo
+			|| ¬¬¬¬¬		
 		}
 	}
 }

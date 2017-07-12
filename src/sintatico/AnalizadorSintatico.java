@@ -232,7 +232,17 @@ public class AnalizadorSintatico {
 	}
 	
 	private void arguments() {//obede
-		
+		if (match("(")){
+			consumir("arguments");
+			expression();
+			while(match(",")){
+				consumir("arguments");
+				expression();
+			}
+			if(match(")")){
+				consumir("arguments");
+			}
+		}
 	}
 	
 	private void type() {//otavio
@@ -240,7 +250,11 @@ public class AnalizadorSintatico {
 	}
 	
 	private void basicType() {//obede
-		
+		if (match("boolean") || match("char") || match("int")){
+			consumir("basicType");
+		} else {
+			//erro
+		}
 	}
 	
 	private void referenceType() {//otavio
@@ -248,7 +262,7 @@ public class AnalizadorSintatico {
 	}
 	
 	private void statementExpression() {//obede
-		
+		expression();
 	}
 	
 	private void expression() {//otavio
@@ -256,7 +270,11 @@ public class AnalizadorSintatico {
 	}
 	
 	private void assignmentExpression() {//obede
-		
+		conditionalAndExpression();
+		if (match("=") || match("+=")){
+			consumir("assignmentExpression");
+			assignmentExpression();
+		}
 	}
 	
 	private void conditionalAndExpression() {//otavio
@@ -264,7 +282,11 @@ public class AnalizadorSintatico {
 	}
 	
 	private void equalityExpression() {//obede
-		
+		relationalExpression();
+		while (match("==")){
+			consumir("equalityExpression");
+			relationalExpression();
+		}
 	}
 	
 	private void relationalExpression(){//otavio
@@ -272,7 +294,11 @@ public class AnalizadorSintatico {
 	}
 	
 	private void additiveExpression() {//obede
-		
+		multiplicativeExpression();
+		while (match("+") || match("-")){
+			consumir("equalityExpression");
+			relationalExpression();
+		}
 	}
 	
 	private void multiplicativeExpression() {//otavio
@@ -280,7 +306,16 @@ public class AnalizadorSintatico {
 	}
 	
 	private void unaryExpression() {//obede
-		
+		if (match("++")){
+			consumir("unaryExpression");
+			unaryExpression();
+		}
+		if (match("-")){
+			consumir("unaryExpression");
+			unaryExpression();
+		} else {
+			simpleUnaryExpression();
+		}
 	}
 	
 	private void simpleUnaryExpression() {//otavio
@@ -288,7 +323,9 @@ public class AnalizadorSintatico {
 	}
 	
 	private void postfixExpression() {//obede
-		
+		primary();
+		//selector
+		//--
 	}
 	
 	private void selector() {//otavio
@@ -296,7 +333,11 @@ public class AnalizadorSintatico {
 	}
 	
 	private void primary() {//obede
-		
+		//this
+		//super
+		literal();
+		creator();
+		qualifiedIdentifier();
 	}
 	
 	private void creator() {//otavio
@@ -304,7 +345,22 @@ public class AnalizadorSintatico {
 	}
 	
 	private void newArrayDeclarator() {//obede
-		
+		match("[");
+		consumir("newArrayDeclarator");
+		expression();
+		match("]");
+		consumir("newArrayDeclarator");
+		if (match("[")){
+			consumir("newArrayDeclarator");
+			if (match("]")){
+				consumir("newArrayDeclarator");
+			} else {
+				expression();
+				if (match("]")){
+					consumir("newArrayDeclarator");
+				}
+			}
+		}
 	}
 	
 	private void literal() {//otavio

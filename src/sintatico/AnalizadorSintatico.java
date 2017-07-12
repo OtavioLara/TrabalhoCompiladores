@@ -14,7 +14,7 @@ public class AnalizadorSintatico {
 	public void consumir(String s) {
 		System.out.println(tokenAtual + " " + s);
 		this.pos++;
-		if (pos < tokens.size()){
+		if (pos < tokens.size()) {
 			tokenAtual = tokens.get(this.pos);
 		} else {
 			tokenAtual = null;
@@ -151,13 +151,12 @@ public class AnalizadorSintatico {
 					block();
 				}
 			} else {
-				// erro
+				erro("Esperado um <identificador>");
 			}
 		} else {
 			type();
 			int pos_ant = this.pos;
-			if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) { // n
-																		// void
+			if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {// nvoid
 				consumir("memberDecl");
 				if (match("(")) {
 					formalParameters();
@@ -172,7 +171,7 @@ public class AnalizadorSintatico {
 					variableDeclarators();
 				}
 			} else {
-				// erro
+				erro("Esperado um <identificador>");
 			}
 		}
 	}
@@ -181,7 +180,7 @@ public class AnalizadorSintatico {
 		if (match("{")) {
 			consumir("block");
 		} else {
-			// erro
+			erro("Esperado '{'");
 		}
 		while (!match("}")) {
 			blockStatement();
@@ -189,11 +188,11 @@ public class AnalizadorSintatico {
 		if (match("}")) {
 			consumir("block");
 		} else {
-			// erro
+			erro("Esperado '}'");
 		}
 	}
 
-	private void blockStatement() { // conferir
+	private void blockStatement() {
 		if (isLocalVariableDeclaratiomStatementORstatement()) {
 			localVariableDeclaratiomStatement();
 		} else {
@@ -201,7 +200,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private boolean isLocalVariableDeclaratiomStatementORstatement() {
+	private boolean isLocalVariableDeclaratiomStatementORstatement() { //conferir
 		boolean value_return = false;
 		if (match("boolean") || match("int") || match("char")) {
 			value_return = true;
@@ -235,7 +234,7 @@ public class AnalizadorSintatico {
 				consumir("statement");
 				statement();
 			} else {
-				// erro
+				erro("Esperado ':'");
 			}
 		} else if (match("if")) {
 			consumir("statement");
@@ -257,7 +256,7 @@ public class AnalizadorSintatico {
 			if (match(";")) {
 				consumir("statement");
 			} else {
-				// erro
+				erro("Esperado ';'");
 			}
 		} else if (match(";")) {
 			consumir("statement");
@@ -274,7 +273,7 @@ public class AnalizadorSintatico {
 		if (match("(")) {
 			consumir("formalParameters");
 		} else {
-			// erro
+			erro("Esperado '('");
 		}
 		if (!match(")")) {
 			formalParameter();
@@ -286,7 +285,7 @@ public class AnalizadorSintatico {
 		if (match(")")) {
 			consumir("formalParameters");
 		} else {
-			// erro
+			erro("Esperado ')'");
 		}
 	}
 
@@ -295,7 +294,7 @@ public class AnalizadorSintatico {
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 			consumir("formalParameter");
 		} else {
-			// erro
+			erro("Esperado <identificador>");
 		}
 	}
 
@@ -304,18 +303,23 @@ public class AnalizadorSintatico {
 			consumir("parExpression");
 			expression();
 		} else {
-			// erro
+			erro("Esperado '('");
 		}
 		if (match(")")) {
 			consumir("parExpression");
 		} else {
-			// erro
+			erro("Esperado ')'");
 		}
 	}
 
-	private void localVariableDeclaratiomStatement() { // errado
+	private void localVariableDeclaratiomStatement() {
 		type();
 		variableDeclarators();
+		if (match(";")) {
+			consumir("localVariableDeclaratiomStatement");
+		} else {
+			erro("Esperado ';'");
+		}
 	}
 
 	private void variableDeclarators() {
@@ -333,7 +337,7 @@ public class AnalizadorSintatico {
 				variableInitializer();
 			}
 		} else {
-			// erro
+			erro("Esperado <identificador>");
 		}
 	}
 
@@ -358,10 +362,10 @@ public class AnalizadorSintatico {
 			if (match("}")) {
 				consumir("arrayInitializer");
 			} else {
-				// erro
+				erro("Esperado '}'");
 			}
 		} else {
-			// erro
+			erro("Esperado '{'");
 		}
 	}
 

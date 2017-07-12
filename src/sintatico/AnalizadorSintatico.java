@@ -169,6 +169,11 @@ public class AnalizadorSintatico {
 					this.pos = pos_ant - 1;
 					consumir("memberDecl_backtracking");
 					variableDeclarators();
+					if (match(";")) {
+						consumir("memberDecl");
+					} else {
+						erro("Esperado ';'");
+					}
 				}
 			} else {
 				erro("Esperado um <identificador>");
@@ -200,7 +205,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private boolean isLocalVariableDeclaratiomStatementORstatement() { //conferir
+	private boolean isLocalVariableDeclaratiomStatementORstatement() { // conferir
 		boolean value_return = false;
 		if (match("boolean") || match("int") || match("char")) {
 			value_return = true;
@@ -212,15 +217,14 @@ public class AnalizadorSintatico {
 				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 					consumir("OR");
 				} else {
-					// erro
+					erro("Esperado <identificador>");
 				}
 			}
 			if (match("[") || tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 				value_return = true;
 			}
-			this.pos = pos_ant;
+			this.pos = pos_ant - 1;
 			consumir("OK");
-
 		}
 		return value_return;
 	}
@@ -341,7 +345,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void variableInitializer() {// obede
+	private void variableInitializer() {
 		if (match("{")) {
 			arrayInitializer();
 		} else {
@@ -349,7 +353,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void arrayInitializer() {// otavio
+	private void arrayInitializer() {
 		if (match("{")) {
 			consumir("arrayInitializer");
 			if (!match("}")) {
@@ -369,60 +373,74 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void arguments() {// obede
+	private void arguments() {
 		if (match("(")) {
 			consumir("arguments");
-			expression();
-			while (match(",")) {
-				consumir("arguments");
+			if (!match(")")) {
 				expression();
+				while (match(",")) {
+					consumir("arguments");
+					expression();
+				}
 			}
 			if (match(")")) {
 				consumir("arguments");
 			} else {
-				// erro
+				erro("Esperado ')'");
 			}
 		} else {
-			// erro
+			erro("Esperado '('");
 		}
 	}
 
-	private void type() {// otavio
-		if (match("boolean") || match("int") || match("char")) {
-			consumir("type");
+	private void type() {
+		if (isBasicType()) {
+			basicType();
 		} else {
 			referenceType();
 		}
 	}
 
-	@Deprecated
-	private void basicType() {// obede
+	private boolean isBasicType() {
+		int pos_ant = this.pos;
+		if (match("boolean") || match("char") || match("int")) {
+			consumir("basicType");
+			if (!match("[")) {
+				this.pos = pos_ant - 1;
+				consumir("OK");
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void basicType() {
 		if (match("boolean") || match("char") || match("int")) {
 			consumir("basicType");
 		} else {
-			// erro
+			erro("Esperado <basicType>");
 		}
 	}
 
-	private void referenceType() {// otavio
+	private void referenceType() {
 		if (match("boolean") || match("int") || match("char")) {
-			consumir("referenceType");
+			basicType();
 			if (match("[")) {
 				consumir("referenceType");
 				if (match("]")) {
 					consumir("referenceType");
 				} else {
-					// erro
+					erro("Esperado ']'");
 				}
 			} else {
-				// erro
+				erro("Esperado '['");
 			}
 			while (match("[")) {
 				consumir("referenceType");
 				if (match("]")) {
 					consumir("referenceType");
 				} else {
-					// erro
+					erro("Esperado ']'");
 				}
 			}
 		} else {
@@ -432,21 +450,21 @@ public class AnalizadorSintatico {
 				if (match("]")) {
 					consumir("referenceType");
 				} else {
-					// erro
+					erro("Esperado ']'");
 				}
 			}
 		}
 	}
 
-	private void statementExpression() {// obede
+	private void statementExpression() {
 		expression();
 	}
 
-	private void expression() {// otavio
+	private void expression() {
 		assignmentExpression();
 	}
 
-	private void assignmentExpression() {// obede
+	private void assignmentExpression() {
 		conditionalAndExpression();
 		if (match("=") || match("+=")) {
 			consumir("assignmentExpression");
@@ -454,7 +472,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void conditionalAndExpression() {// otavio
+	private void conditionalAndExpression() {
 		equalityExpression();
 		while (match("&&")) {
 			consumir("conditionalAndExpression");
@@ -462,7 +480,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void equalityExpression() {// obede
+	private void equalityExpression() {
 		relationalExpression();
 		while (match("==")) {
 			consumir("equalityExpression");
@@ -470,7 +488,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void relationalExpression() {// otavio
+	private void relationalExpression() {
 		additiveExpression();
 		if (match(">") || match("<=")) {
 			consumir("relationalExpression");
@@ -481,7 +499,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void additiveExpression() {// obede
+	private void additiveExpression() {
 		multiplicativeExpression();
 		while (match("+") || match("-")) {
 			consumir("equalityExpression");
@@ -489,7 +507,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void multiplicativeExpression() {// otavio
+	private void multiplicativeExpression() {
 		unaryExpression();
 		while (match("*")) {
 			consumir("multiplicativeExpression");
@@ -497,7 +515,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void unaryExpression() {// obede
+	private void unaryExpression() {
 		if (match("++")) {
 			consumir("unaryExpression");
 			unaryExpression();
@@ -510,18 +528,19 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void simpleUnaryExpression() {// otavio
+	private void simpleUnaryExpression() {
 		if (match("!")) {
 			unaryExpression();
 		} else if (match("(")) {
 			consumir("simpleUnaryExpression");
-			if (match("boolean") || match("int") || match("char")) {
+			if (isBasicType()) {
+				basicType();
 				consumir("simpleUnaryExpression");
 				if (match(")")) {
 					consumir("simpleUnaryExpression");
 					unaryExpression();
 				} else {
-					// erro
+					erro("Esperado ')'");
 				}
 			} else {
 				referenceType();
@@ -529,7 +548,7 @@ public class AnalizadorSintatico {
 					consumir("simpleUnaryExpression");
 					simpleUnaryExpression();
 				} else {
-					// erro
+					erro("Esperado ')'");
 				}
 			}
 		} else {
@@ -537,7 +556,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void postfixExpression() {// obede
+	private void postfixExpression() {
 		primary();
 		while (match(".") || match("[")) {
 			selector();
@@ -547,7 +566,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void selector() {// otavio
+	private void selector() {
 		if (match(".")) {
 			qualifiedIdentifier();
 			if (match("(")) {
@@ -559,14 +578,14 @@ public class AnalizadorSintatico {
 			if (match("]")) {
 				consumir("selector");
 			} else {
-				// erro
+				erro("Esperado ']'");
 			}
 		} else {
-			// erro
+			erro("Esperado '.' ou '['");
 		}
 	}
 
-	private void primary() {// obede
+	private void primary() {
 		if (match("(")) {
 			parExpression();
 		} else if (match("this")) {
@@ -581,13 +600,13 @@ public class AnalizadorSintatico {
 				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 					consumir("primary");
 				} else {
-					// erro
+					erro("Esperado <identificador>");
 				}
 				if (match("(")) {
 					arguments();
 				}
 			} else {
-				// erro
+				erro("Esperado '(' ou '.'");
 			}
 		} else if (match("new")) {
 			creator();
@@ -601,9 +620,9 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void creator() {// otavio
+	private void creator() {
 		if (match("boolean") || match("int") || match("char")) {
-			consumir("creator");
+			basicType();
 		} else {
 			qualifiedIdentifier();
 		}
@@ -619,7 +638,7 @@ public class AnalizadorSintatico {
 					if (match("]")) {
 						consumir("creator");
 					} else {
-						// erro
+						erro("Esperado ']'");
 					}
 				}
 				if (match("{")) {
@@ -633,17 +652,17 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void newArrayDeclarator() {// obede
+	private void newArrayDeclarator() {
 		if (match("[")) {
 			consumir("newArrayDeclarator");
 			expression();
 		} else {
-			// erro
+			erro("Esperado '['");
 		}
 		if (match("]")) {
 			consumir("newArrayDeclarator");
 		} else {
-			// erro
+			erro("Esperado ']'");
 		}
 		while (match("[")) {
 			consumir("newArrayDeclarator");
@@ -651,7 +670,7 @@ public class AnalizadorSintatico {
 			if (match("]")) {
 				consumir("newArrayDeclarator");
 			} else {
-				// erro
+				erro("Esperado ']'");
 			}
 		}
 		while (match("[")) {
@@ -659,12 +678,12 @@ public class AnalizadorSintatico {
 			if (match("]")) {
 				consumir("newArrayDeclarator");
 			} else {
-				// erro
+				erro("Esperado ']'");
 			}
 		}
 	}
 
-	private void literal() {// otavio
+	private void literal() {
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.INT_LITERAL) {
 			consumir("literal");
 		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.CHAR_LITERAL) {
@@ -678,12 +697,15 @@ public class AnalizadorSintatico {
 		} else if (match("null")) {
 			consumir("literal");
 		} else {
-			// erro
+			erro("Esperado <literal>");
 		}
 	}
 
 	public static void main(String[] args) {
 		AnalizadorSintatico as = new AnalizadorSintatico("entradas/entrada_errada_Durelli");
 		as.analizar();
+		for (ErroSintatico e : as.erros){
+			System.out.println(e);
+		}
 	}
 }

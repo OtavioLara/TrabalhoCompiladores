@@ -12,6 +12,10 @@ abstract public class IToken {
 	public boolean match(String lex) {
 		return this.getLexema().equals(lex);
 	}
+	
+	public int getLine(){
+		return linha;
+	}
 	/**
 	 * Descobr o tipo de um token
 	 * @return

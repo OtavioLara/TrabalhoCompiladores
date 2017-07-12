@@ -9,17 +9,28 @@ public class AnalizadorSintatico {
 	private IToken tokenAtual;
 	private ArrayList<IToken> tokens;
 	private int pos;
+	private ArrayList<ErroSintatico> erros;
 
 	public void consumir(String s) {
 		System.out.println(tokenAtual + " " + s);
 		this.pos++;
-		tokenAtual = tokens.get(this.pos);
+		if (pos < tokens.size()){
+			tokenAtual = tokens.get(this.pos);
+		} else {
+			tokenAtual = null;
+		}
 	}
 
 	public AnalizadorSintatico(String entrada) {
 		tokens = new Lexico(entrada).getAllTokens();
 		this.pos = 0;
 		tokenAtual = tokens.get(0);
+		erros = new ArrayList<>();
+	}
+
+	private void erro(String desc) {
+		ErroSintatico e = new ErroSintatico(desc, tokenAtual);
+		erros.add(e);
 	}
 
 	private boolean match(String str) {
@@ -37,7 +48,7 @@ public class AnalizadorSintatico {
 			if (match(";")) {
 				consumir("compilationUnit");
 			} else {
-				// erro
+				erro("Esperado ';'");
 			}
 		}
 		while (match("import")) {
@@ -46,23 +57,19 @@ public class AnalizadorSintatico {
 			if (match(";")) {
 				consumir("compilationUnit");
 			} else {
-				// erro
+				erro("Esperado ';'");
 			}
 		}
 		while (!match("EOF")) {
 			typeDeclaration();
 		}
-		// EOF
+
 		if (match("EOF")) {
+			consumir("compilationUnit");
 			return;
 		} else {
-			// erro
+			erro("Esperado 'EOF'");
 		}
-	}
-
-	private void typeDeclaration() {
-		modifier();
-		classDeclaration();
 	}
 
 	private void qualifiedIdentifier() {
@@ -73,15 +80,20 @@ public class AnalizadorSintatico {
 				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 					consumir("qualifiedIdentifier");
 				} else {
-					// erro
+					erro("Esperado um <identificador>");
 				}
 			}
 		}
 	}
 
-	private void modifier() {
+	private void typeDeclaration() {
+		modifiers();
+		classDeclaration();
+	}
+
+	private void modifiers() {
 		if (!match("public") && !match("private") && !match("protected") && !match("abstract") && !match("static")) {
-			// erro
+			erro("Esperado modificador de acesso");
 		}
 		while (match("public") || match("private") || match("protected") || match("abstract") || match("static")) {
 			consumir("modifier");
@@ -92,14 +104,15 @@ public class AnalizadorSintatico {
 		if (match("class")) {
 			consumir("classDeclaration");
 		} else {
-			// no class found error;
+			erro("Esperado 'class'");
 		}
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 			consumir("classDeclaration");
 		} else {
-			// erro, expected a identifier
+			erro("Esperado um identificador");
 		}
 		if (match("extends")) {
+			consumir("classDeclaration");
 			qualifiedIdentifier();
 		}
 		classBody();
@@ -109,16 +122,16 @@ public class AnalizadorSintatico {
 		if (match("{")) {
 			consumir("classBody");
 		} else {
-			// erro
+			erro("Esperado '{'");
 		}
 		while (!match("}")) {
-			modifier();
+			modifiers();
 			memberDecl();
 		}
 		if (match("}")) {
 			consumir("classBody");
 		} else {
-			// erro
+			erro("Esperado '{'");
 		}
 	}
 
@@ -181,8 +194,36 @@ public class AnalizadorSintatico {
 	}
 
 	private void blockStatement() { // conferir
-		localVariableDeclaratiomStatement();
-		statement();
+		if (isLocalVariableDeclaratiomStatementORstatement()) {
+			localVariableDeclaratiomStatement();
+		} else {
+			statement();
+		}
+	}
+
+	private boolean isLocalVariableDeclaratiomStatementORstatement() {
+		boolean value_return = false;
+		if (match("boolean") || match("int") || match("char")) {
+			value_return = true;
+		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+			int pos_ant = this.pos;
+			consumir("OR");
+			while (match(".")) {
+				consumir("OR");
+				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+					consumir("OR");
+				} else {
+					// erro
+				}
+			}
+			if (match("[") || tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+				value_return = true;
+			}
+			this.pos = pos_ant;
+			consumir("OK");
+
+		}
+		return value_return;
 	}
 
 	private void statement() {
@@ -272,7 +313,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void localVariableDeclaratiomStatement() {
+	private void localVariableDeclaratiomStatement() { // errado
 		type();
 		variableDeclarators();
 	}

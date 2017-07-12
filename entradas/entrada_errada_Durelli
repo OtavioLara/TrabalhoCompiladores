@@ -11,5 +11,4 @@ public abstract public class teste extends pacote.classe.legal {
 		int bus;
 	}
 	public void getCarro(int carr, char a);
-	int a[] = {10,3,5}
 }

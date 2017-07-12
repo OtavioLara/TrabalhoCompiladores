@@ -1,0 +1,78 @@
+package pass;
+import java.lang.Integer;
+import java.lang.System;
+public class Series {
+	public static int ARITHMETIC = 1;
+	public static int GEOMETRIC = 2;
+	private int a; // first term
+	private int d; // common sum or multiple
+	private pacote1.pacote2 n; // number of terms
+	public Series() {
+		this(1, 1, 10);
+	}
+	public Series(int a, int d, int n) {
+		this.a = a;
+		this.d = d;
+		this.n = n;
+	}
+
+	public int[][] metodo(String a, int[] b, char[][] c){
+		a = 5*4;
+		b = i--;
+		c = ++i;
+		if(!(a==b) && (c > 4)){
+			return a;
+		} else {
+			return b;
+		}
+	}
+
+	public int computeSum(int kind) {
+		int sum = a, t = a, i = n;
+		while (i > 1) {
+			if (kind == ARITHMETIC) {
+				t += d;
+			} else if (kind == GEOMETRIC) {
+				t = t * d;
+			}
+			sum += t;
+		}
+	return sum;
+	}
+	public static void main(String[] args) {
+		pacote1.pacote2.pacote3 a = Integer.parseInt(args[0]);
+		int d = Integer.parseInt(args[1]);
+		int n = Integer.parseInt(args[2]);
+		if (x)
+			x = 1;
+		else if (x)
+			x = 2;
+		if (x)
+			if (x)
+				x = 1;
+			else
+				x = 2;
+		else
+			x = 4;
+		while (x==0)
+			while (y==0)
+				if(y == 3)
+					print(2);
+		while (!(true)){ 
+			++i;
+			i--;
+		}
+		Series s = new Series(a, d, n);
+		System.out.println("Arithmetic sum = "+ s.computeSum(Series.ARITHMETIC));
+		System.out.println("Geometric sum = "+ s.computeSum(Series.GEOMETRIC));
+		
+		int a  = b[u];
+		char[] a = (char[]) b[j][k][l];
+		Series[][][] b = (Series[][]) a;
+		Series c = (Series) a; 
+		char b;
+		String c = new String("OI");
+		a[i] = b[j][2][c] * 4 - 4;
+		a[j][c*2] = b[i-3]; 
+	}
+}

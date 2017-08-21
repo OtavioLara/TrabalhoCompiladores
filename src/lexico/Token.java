@@ -3,7 +3,7 @@ package lexico;
 import lexico.Constantes.TOKEN_CODIGO;
 
 public class Token extends IToken {
-	private TOKEN_CODIGO cod;
+	public TOKEN_CODIGO cod;
 
 	public Token(String lexema, TOKEN_CODIGO cod, int linha) {
 		this.lexema = lexema;

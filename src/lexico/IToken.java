@@ -29,7 +29,7 @@ abstract public class IToken {
 			if(((Token)this).getCodigo() == TOKEN_CODIGO.EOF) {
 				return TOKEN_CODIGO.EOF;
 			}
-			return null;
+			return ((Token)this).cod;
 		}
 		return null;
 	}

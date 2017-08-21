@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import lexico.Constantes.TOKEN_CODIGO;
 import lexico.IToken;
 import lexico.Lexico;
+import lexico.Token;
 
 public class AnalizadorSintatico {
 	private IToken tokenAtual;
@@ -12,7 +13,7 @@ public class AnalizadorSintatico {
 	private ArrayList<ErroSintatico> erros;
 
 	public void consumir(String s) {
-		System.out.println(tokenAtual + " " + s);
+		//System.out.println(tokenAtual + " " + s);
 		this.pos++;
 		if (pos < tokens.size()) {
 			tokenAtual = tokens.get(this.pos);
@@ -37,6 +38,9 @@ public class AnalizadorSintatico {
 		this.pos = 0;
 		tokenAtual = tokens.get(0);
 		erros = new ArrayList<>();
+//		for (IToken t : tokens){
+//			System.out.println(t);
+//		}
 	}
 
 	private void erro(String desc) {
@@ -260,6 +264,7 @@ public class AnalizadorSintatico {
 			} else {
 				erro("Esperado ':'");
 			}
+//			statement();
 		} else if (match("if")) {
 			consumir("statement");
 			parExpression();
@@ -738,11 +743,11 @@ public class AnalizadorSintatico {
 
 	private void literal() {
 		if (tokenAtual == null) return;
-		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.INT_LITERAL) {
+		if (((Token)tokenAtual).cod == TOKEN_CODIGO.INT_LITERAL) {
 			consumir("literal");
-		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.CHAR_LITERAL) {
+		} else if (((Token)tokenAtual).cod == TOKEN_CODIGO.CHAR_LITERAL) {
 			consumir("literal");
-		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.STRING_LITERAL) {
+		} else if (((Token)tokenAtual).cod == TOKEN_CODIGO.STRING_LITERAL) {
 			consumir("literal");
 		} else if (match("true")) {
 			consumir("literal");
@@ -756,7 +761,7 @@ public class AnalizadorSintatico {
 	}
 
 	public static void main(String[] args) {
-		AnalizadorSintatico as = new AnalizadorSintatico("entradas/SyntaxErrors.txt");
+		AnalizadorSintatico as = new AnalizadorSintatico("entradas/SyntaxErrors.java");
 		as.analizar();
 		as.mostrarErros();
 	}

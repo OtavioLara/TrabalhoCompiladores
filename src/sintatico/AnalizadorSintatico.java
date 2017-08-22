@@ -13,7 +13,7 @@ public class AnalizadorSintatico {
 	private ArrayList<ErroSintatico> erros;
 
 	public void consumir(String s) {
-		//System.out.println(tokenAtual + " " + s);
+//		System.out.println(tokenAtual + " " + s);
 		this.pos++;
 		if (pos < tokens.size()) {
 			tokenAtual = tokens.get(this.pos);
@@ -43,8 +43,9 @@ public class AnalizadorSintatico {
 //		}
 	}
 
-	private void erro(String desc) {
+	private void erro(String desc, String s) {
 		ErroSintatico e = new ErroSintatico(desc, tokenAtual);
+		System.out.println(e + "---" + tokenAtual + "---" + s);
 		erros.add(e);
 		consumir("ERRO");
 	}
@@ -66,7 +67,7 @@ public class AnalizadorSintatico {
 			if (match(";")) {
 				consumir("compilationUnit");
 			} else {
-				erro("Esperado ';'");
+				erro("Esperado ';'","compilationUnit");
 			}
 		}
 		while (match("import")) {
@@ -75,7 +76,7 @@ public class AnalizadorSintatico {
 			if (match(";")) {
 				consumir("compilationUnit");
 			} else {
-				erro("Esperado ';'");
+				erro("Esperado ';'","compilationUnit");
 			}
 		}
 		while (!match("EOF")) {
@@ -86,7 +87,7 @@ public class AnalizadorSintatico {
 			consumir("compilationUnit");
 			return;
 		} else {
-			erro("Esperado 'EOF'");
+			erro("Esperado 'EOF'","compilationUnit");
 		}
 	}
 
@@ -99,7 +100,7 @@ public class AnalizadorSintatico {
 				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 					consumir("qualifiedIdentifier");
 				} else {
-					erro("Esperado um <identificador>");
+					erro("Esperado um <identificador>","qualifiedIdentifier");
 				}
 			}
 		}
@@ -123,12 +124,12 @@ public class AnalizadorSintatico {
 		if (match("class")) {
 			consumir("classDeclaration");
 		} else {
-			erro("Esperado 'class'");
+			erro("Esperado 'class'","classDeclaration");
 		}
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 			consumir("classDeclaration");
 		} else {
-			erro("Esperado um identificador");
+			erro("Esperado um identificador","classDeclaration");
 		}
 		if (match("extends")) {
 			consumir("classDeclaration");
@@ -142,7 +143,7 @@ public class AnalizadorSintatico {
 		if (match("{")) {
 			consumir("classBody");
 		} else {
-			erro("Esperado '{'");
+			erro("Esperado '{'","classBody");
 		}
 		while (!match("}")) {
 			modifiers();
@@ -151,17 +152,27 @@ public class AnalizadorSintatico {
 		if (match("}")) {
 			consumir("classBody");
 		} else {
-			erro("Esperado '{'");
+			erro("Esperado '{'","classBody");
 		}
 	}
 
 	private void memberDecl() {
 		if (tokenAtual == null) return;
+		boolean constructor = false;
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) { // construtor
+			constructor = true;
+			int pos_ant = this.pos;
 			consumir("memberDecl");
-			formalParameters();
-			block();
-		} else if (match("void")) {
+			if (match("(")){
+				formalParameters();
+				block();
+			} else {
+				this.pos = pos_ant - 1;
+				consumir("memberDecl_backtracking");
+				constructor = false;
+			}
+		}
+		if (match("void") && !constructor) {
 			consumir("memberDecl");
 			if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) { // void
 				consumir("memberDecl");
@@ -172,9 +183,9 @@ public class AnalizadorSintatico {
 					block();
 				}
 			} else {
-				erro("Esperado um <identificador>");
+				erro("Esperado um <identificador>","memberDecl");
 			}
-		} else {
+		} else if (!constructor){
 			type();
 			int pos_ant = this.pos;
 			if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {// nvoid
@@ -193,11 +204,11 @@ public class AnalizadorSintatico {
 					if (match(";")) {
 						consumir("memberDecl");
 					} else {
-						erro("Esperado ';'");
+						erro("Esperado ';'","memberDecl");
 					}
 				}
 			} else {
-				erro("Esperado um <identificador>");
+				erro("Esperado um <identificador>","memberDecl");
 			}
 		}
 	}
@@ -207,7 +218,7 @@ public class AnalizadorSintatico {
 		if (match("{")) {
 			consumir("block");
 		} else {
-			erro("Esperado '{'");
+			erro("Esperado '{'","block");
 		}
 		while (!match("}")) {
 			blockStatement();
@@ -215,7 +226,7 @@ public class AnalizadorSintatico {
 		if (match("}")) {
 			consumir("block");
 		} else {
-			erro("Esperado '}'");
+			erro("Esperado '}'","block");
 		}
 	}
 
@@ -240,7 +251,7 @@ public class AnalizadorSintatico {
 				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 					consumir("OR");
 				} else {
-					erro("Esperado <identificador>");
+					erro("Esperado <identificador>","OK");
 				}
 			}
 			if (match("[") || tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
@@ -256,14 +267,14 @@ public class AnalizadorSintatico {
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			block();
-		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
-			consumir("statement");
-			if (match(":")) {
-				consumir("statement");
-				statement();
-			} else {
-				erro("Esperado ':'");
-			}
+//		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+//			consumir("statement");
+////			if (match(":")) {
+////				consumir("statement");
+////				statement();
+////			} else {
+////				erro("Esperado ':'");
+////			}
 //			statement();
 		} else if (match("if")) {
 			consumir("statement");
@@ -285,7 +296,7 @@ public class AnalizadorSintatico {
 			if (match(";")) {
 				consumir("statement");
 			} else {
-				erro("Esperado ';'");
+				erro("Esperado ';'","statement");
 			}
 		} else if (match(";")) {
 			consumir("statement");
@@ -303,7 +314,7 @@ public class AnalizadorSintatico {
 		if (match("(")) {
 			consumir("formalParameters");
 		} else {
-			erro("Esperado '('");
+			erro("Esperado '('","formalParameters");
 		}
 		if (!match(")")) {
 			formalParameter();
@@ -315,7 +326,7 @@ public class AnalizadorSintatico {
 		if (match(")")) {
 			consumir("formalParameters");
 		} else {
-			erro("Esperado ')'");
+			erro("Esperado ')'","formalParameters");
 		}
 	}
 
@@ -325,7 +336,7 @@ public class AnalizadorSintatico {
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 			consumir("formalParameter");
 		} else {
-			erro("Esperado <identificador>");
+			erro("Esperado <identificador>","formalParameter");
 		}
 	}
 
@@ -335,12 +346,12 @@ public class AnalizadorSintatico {
 			consumir("parExpression");
 			expression();
 		} else {
-			erro("Esperado '('");
+			erro("Esperado '('","parExpression");
 		}
 		if (match(")")) {
 			consumir("parExpression");
 		} else {
-			erro("Esperado ')'");
+			erro("Esperado ')'","parExpression");
 		}
 	}
 
@@ -351,14 +362,14 @@ public class AnalizadorSintatico {
 		if (match(";")) {
 			consumir("localVariableDeclaratiomStatement");
 		} else {
-			erro("Esperado ';'");
+			erro("Esperado ';'","localVariableDeclaratiomStatement");
 		}
 	}
 
 	private void variableDeclarators() {
 		if (tokenAtual == null) return;
 		variableDeclarator();
-		if (match(",")) {
+		while (match(",")) {
 			consumir("variableDeclarators");
 			variableDeclarator();
 		}
@@ -373,7 +384,7 @@ public class AnalizadorSintatico {
 				variableInitializer();
 			}
 		} else {
-			erro("Esperado <identificador>");
+			erro("Esperado <identificador>","variableDeclarator");
 		}
 	}
 
@@ -400,10 +411,10 @@ public class AnalizadorSintatico {
 			if (match("}")) {
 				consumir("arrayInitializer");
 			} else {
-				erro("Esperado '}'");
+				erro("Esperado '}'","arrayInitializer");
 			}
 		} else {
-			erro("Esperado '{'");
+			erro("Esperado '{'","arrayInitializer");
 		}
 	}
 
@@ -421,10 +432,10 @@ public class AnalizadorSintatico {
 			if (match(")")) {
 				consumir("arguments");
 			} else {
-				erro("Esperado ')'");
+				erro("Esperado ')'","arguments");
 			}
 		} else {
-			erro("Esperado '('");
+			erro("Esperado '('","arguments");
 		}
 	}
 
@@ -438,16 +449,17 @@ public class AnalizadorSintatico {
 	}
 
 	private boolean isBasicType() {
+		boolean isBasicType = false;
 		int pos_ant = this.pos;
 		if (match("boolean") || match("char") || match("int")) {
-			consumir("basicType");
+			consumir("isBasicType");
 			if (!match("[")) {
-				this.pos = pos_ant - 1;
-				consumir("OK");
-				return true;
+				isBasicType = true;
 			}
 		}
-		return false;
+		this.pos = pos_ant - 1;
+		consumir("OK");
+		return isBasicType;
 	}
 
 	private void basicType() {
@@ -455,7 +467,7 @@ public class AnalizadorSintatico {
 		if (match("boolean") || match("char") || match("int")) {
 			consumir("basicType");
 		} else {
-			erro("Esperado <basicType>");
+			erro("Esperado <basicType>","basicType");
 		}
 	}
 
@@ -468,17 +480,17 @@ public class AnalizadorSintatico {
 				if (match("]")) {
 					consumir("referenceType");
 				} else {
-					erro("Esperado ']'");
+					erro("Esperado ']'","referenceType");
 				}
 			} else {
-				erro("Esperado '['");
+				erro("Esperado '['","referenceType");
 			}
 			while (match("[")) {
 				consumir("referenceType");
 				if (match("]")) {
 					consumir("referenceType");
 				} else {
-					erro("Esperado ']'");
+					erro("Esperado ']'","referenceType");
 				}
 			}
 		} else {
@@ -488,7 +500,7 @@ public class AnalizadorSintatico {
 				if (match("]")) {
 					consumir("referenceType");
 				} else {
-					erro("Esperado ']'");
+					erro("Esperado ']'","referenceType");
 				}
 			}
 		}
@@ -566,13 +578,53 @@ public class AnalizadorSintatico {
 		if (match("++")) {
 			consumir("unaryExpression");
 			unaryExpression();
-		}
-		if (match("-")) {
+		} else if (match("-")) {
 			consumir("unaryExpression");
 			unaryExpression();
 		} else {
 			simpleUnaryExpression();
 		}
+	}
+	
+	public boolean isCast(){
+		int pos_ant = this.pos;
+		boolean isCast = false;
+		consumir("("); //(
+		if (isBasicType()){
+			consumir(""); // basicType
+			if (match(")")){
+				isCast = true;
+			}
+		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR){
+			consumir(""); //.
+			while(match(".")){
+				consumir("."); //.
+				consumir("<id>");	
+			}
+			while(match("[")){
+				consumir("["); //.
+				consumir("]");
+			}
+			if (match(")")){
+				isCast = true;
+			}
+		} else if(match("char") || match("boolean") || match("int")){
+			consumir(""); //.
+			if (match("[")){
+				consumir("["); //.
+				consumir("]");
+				while (match("[")){
+					consumir("["); //.
+					consumir("]");	
+				}
+				if (match(")")){
+					isCast = true;
+				}
+			}			
+		}		
+		this.pos = pos_ant - 1;
+		consumir("isCast");
+		return isCast;
 	}
 
 	private void simpleUnaryExpression() {
@@ -580,7 +632,7 @@ public class AnalizadorSintatico {
 		if (match("!")) {
 			consumir("simpleUnaryExpression");
 			unaryExpression();
-		} else if (match("(")) {
+		} else if (match("(") && isCast()) {
 			consumir("simpleUnaryExpression");
 			if (isBasicType()) {
 				basicType();
@@ -589,7 +641,7 @@ public class AnalizadorSintatico {
 					consumir("simpleUnaryExpression");
 					unaryExpression();
 				} else {
-					erro("Esperado ')'");
+					erro("Esperado ')'","simpleUnaryExpression");
 				}
 			} else {
 				referenceType();
@@ -597,7 +649,7 @@ public class AnalizadorSintatico {
 					consumir("simpleUnaryExpression");
 					simpleUnaryExpression();
 				} else {
-					erro("Esperado ')'");
+					erro("Esperado ')'","simpleUnaryExpression");
 				}
 			}
 		} else {
@@ -630,10 +682,10 @@ public class AnalizadorSintatico {
 			if (match("]")) {
 				consumir("selector");
 			} else {
-				erro("Esperado ']'");
+				erro("Esperado ']'","selector");
 			}
 		} else {
-			erro("Esperado '.' ou '['");
+			erro("Esperado '.' ou '['","selector");
 		}
 	}
 
@@ -655,13 +707,13 @@ public class AnalizadorSintatico {
 				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 					consumir("primary");
 				} else {
-					erro("Esperado <identificador>");
+					erro("Esperado <identificador>","primary");
 				}
 				if (match("(")) {
 					arguments();
 				}
 			} else {
-				erro("Esperado '(' ou '.'");
+				erro("Esperado '(' ou '.'","primary");
 			}
 		} else if (match("new")) {
 			consumir("primary");
@@ -695,7 +747,7 @@ public class AnalizadorSintatico {
 					if (match("]")) {
 						consumir("creator");
 					} else {
-						erro("Esperado ']'");
+						erro("Esperado ']'","creator");
 					}
 				}
 				if (match("{")) {
@@ -715,12 +767,12 @@ public class AnalizadorSintatico {
 			consumir("newArrayDeclarator");
 			expression();
 		} else {
-			erro("Esperado '['");
+			erro("Esperado '['","newArrayDeclarator");
 		}
 		if (match("]")) {
 			consumir("newArrayDeclarator");
 		} else {
-			erro("Esperado ']'");
+			erro("Esperado ']'","newArrayDeclarator");
 		}
 		while (match("[")) {
 			consumir("newArrayDeclarator");
@@ -728,7 +780,7 @@ public class AnalizadorSintatico {
 			if (match("]")) {
 				consumir("newArrayDeclarator");
 			} else {
-				erro("Esperado ']'");
+				erro("Esperado ']'","newArrayDeclarator");
 			}
 		}
 		while (match("[")) {
@@ -736,7 +788,7 @@ public class AnalizadorSintatico {
 			if (match("]")) {
 				consumir("newArrayDeclarator");
 			} else {
-				erro("Esperado ']'");
+				erro("Esperado ']'","newArrayDeclarator");
 			}
 		}
 	}
@@ -756,13 +808,17 @@ public class AnalizadorSintatico {
 		} else if (match("null")) {
 			consumir("literal");
 		} else {
-			erro("Esperado <literal>");
+			erro("Esperado <literal>","literal");
 		}
 	}
 
 	public static void main(String[] args) {
-		AnalizadorSintatico as = new AnalizadorSintatico("entradas/SyntaxErrors.java");
+		AnalizadorSintatico as = new AnalizadorSintatico("entradas/SyntaxErrors.txt");
 		as.analizar();
 		as.mostrarErros();
+	}
+	
+	public String toString(){
+		return tokenAtual.getLine() + "";
 	}
 }

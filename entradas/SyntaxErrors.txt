@@ -58,7 +58,7 @@ public class Series {
 			while (y==0)
 				if(y == 3)
 					print(2);
-		while (!(true)){ 
+		while (!true){ 
 			++i;
 			i--;
 		}

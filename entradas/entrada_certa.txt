@@ -7,7 +7,7 @@ abstract public class Animal {
 	protected String sound;
 }
 
-public class Dog implemens Animal {
+public class Dog extends Animal {
 	// qtde de cachorros instanciados 
 	public static final Integer qtde = 0;
 	private int idade;

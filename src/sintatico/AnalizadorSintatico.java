@@ -232,50 +232,52 @@ public class AnalizadorSintatico {
 
 	private void blockStatement() {
 		if (tokenAtual == null) return;
-		if (isLocalVariableDeclaratiomStatementORstatement()) {
+		if (isLocalVariableDeclaratiomStatement()) {
 			localVariableDeclaratiomStatement();
 		} else {
 			statement();
 		}
 	}
 
-	private boolean isLocalVariableDeclaratiomStatementORstatement() { // conferir
-		boolean value_return = false;
-		if (match("boolean") || match("int") || match("char")) {
-			value_return = true;
+	private boolean isLocalVariableDeclaratiomStatement() { // conferir
+		boolean isLocalVD = false;
+		int pos_ant = this.pos;
+		if (isBasicType()){
+			isLocalVD = true;
+		} else if(match("char") || match("boolean") || match("int")){
+			consumir(""); //.
+			if (match("[")){
+				consumir("["); //.
+				if (match("]")){
+					isLocalVD = true;
+				}
+			}			
 		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
-			int pos_ant = this.pos;
 			consumir("OR");
 			while (match(".")) {
 				consumir("OR");
 				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 					consumir("OR");
-				} else {
-					erro("Esperado <identificador>","OK");
 				}
 			}
-			if (match("[") || tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
-				value_return = true;
+			if (match("[")) {
+				consumir("");
+				if (match("]")){
+					isLocalVD = true;
+				}
 			}
-			this.pos = pos_ant - 1;
-			consumir("OK");
+			
 		}
-		return value_return;
+		this.pos = pos_ant - 1;
+		consumir("OK");
+		return isLocalVD;
+
 	}
 
 	private void statement() {
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			block();
-//		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
-//			consumir("statement");
-////			if (match(":")) {
-////				consumir("statement");
-////				statement();
-////			} else {
-////				erro("Esperado ':'");
-////			}
-//			statement();
 		} else if (match("if")) {
 			consumir("statement");
 			parExpression();

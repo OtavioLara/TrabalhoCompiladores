@@ -2,6 +2,10 @@ package sintatico;
 
 import java.util.ArrayList;
 import lexico.Constantes.TOKEN_CODIGO;
+import semantica.ConstantesSemantica.TIPO_DADOS;
+import semantica.Escopo;
+import semantica.PilhaEscopo;
+import semantica.TabelaSimbolosSemantica;
 import lexico.IToken;
 import lexico.Lexico;
 import lexico.Token;
@@ -11,6 +15,10 @@ public class AnalizadorSintatico {
 	private ArrayList<IToken> tokens;
 	private int pos;
 	private ArrayList<ErroSintatico> erros;
+	private int indexEscopo = -1;
+	private TabelaSimbolosSemantica tabela = new TabelaSimbolosSemantica();
+	
+	//-----------------------
 
 	public void consumir(String s) {
 //		System.out.println(tokenAtual + " " + s);
@@ -21,26 +29,6 @@ public class AnalizadorSintatico {
 			tokenAtual = null;
 			mostrarErros();
 		}
-	}
-	
-	private void mostrarErros(){
-		if (erros.size() == 0){
-			System.out.println("\n\n\n******* Não há erros *************");
-		}
-		for (ErroSintatico e : this.erros){
-			System.out.println(e);
-		}
-		System.exit(0);
-	}
-
-	public AnalizadorSintatico(String entrada) {
-		tokens = new Lexico(entrada).getAllTokens();
-		this.pos = 0;
-		tokenAtual = tokens.get(0);
-		erros = new ArrayList<>();
-//		for (IToken t : tokens){
-//			System.out.println(t);
-//		}
 	}
 
 	private void erro(String desc, String s) {
@@ -55,11 +43,64 @@ public class AnalizadorSintatico {
 		return tokenAtual.match(str);
 	}
 
-	public void analizar() {
-		compilationUnit();
+	//----------------------------------
+	
+	private String getObjectName(){
+		String name = tokenAtual.getLexema();
+		int pos_ant = this.pos;
+		consumir("");
+		while(match(".")){
+			consumir("");
+			name = tokenAtual.getLexema();
+			consumir("");
+		}
+		this.pos = pos_ant -1;
+		consumir("");		
+		return name;
 	}
+	
+	private boolean isArray(){
+		String name = tokenAtual.getLexema();
+		boolean isArray = false;
+		int pos_ant = this.pos;
+		consumir("");
+		while(match(".")){
+			consumir("");
+			name = tokenAtual.getLexema();
+			consumir("");
+		}
+		if (match("[")){
+			consumir("");
+			if (match("]")){
+				isArray = true;
+			}
+		}
+		this.pos = pos_ant -1;
+		consumir("");		
+		return isArray;
+	}
+	
+	public void createEscopo(String name){
+		Escopo esc = new Escopo();
+		esc.name = name;
+		this.indexEscopo = PilhaEscopo.insertEscopo(esc);
+	}
+	
+	public void insertTabela(String lexema, String type, boolean isArray){
+		this.tabela.insert(lexema, PilhaEscopo.getLastEscopo(), getType(type, isArray));
+	}
+	
+	public void removeEscopo(){
+		PilhaEscopo.removeLastEscopo();
+	}
+	
+	//--------------------------------------------
 
 	private void compilationUnit() {
+		createEscopo("GLOBAL");
+//		insertTabela("String", "String"); @obede: tabela de import
+		
+		
 		if (tokenAtual == null) return;
 		if (match("package")) {
 			consumir("compilationUnit");
@@ -72,6 +113,8 @@ public class AnalizadorSintatico {
 		}
 		while (match("import")) {
 			consumir("compilationUnit");
+//			String name = getObjectName();
+//			insertTabela(name, name); @obede: tabela de import
 			qualifiedIdentifier();
 			if (match(";")) {
 				consumir("compilationUnit");
@@ -84,6 +127,7 @@ public class AnalizadorSintatico {
 		}
 
 		if (match("EOF")) {
+			removeEscopo();
 			consumir("compilationUnit");
 			return;
 		} else {
@@ -127,11 +171,13 @@ public class AnalizadorSintatico {
 			erro("Esperado 'class'","classDeclaration");
 		}
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+			createEscopo(tokenAtual.getLexema());
 			consumir("classDeclaration");
 		} else {
 			erro("Esperado um identificador","classDeclaration");
 		}
 		if (match("extends")) {
+//			analise semantica? @obede
 			consumir("classDeclaration");
 			qualifiedIdentifier();
 		}
@@ -151,19 +197,24 @@ public class AnalizadorSintatico {
 		}
 		if (match("}")) {
 			consumir("classBody");
+			removeEscopo();
 		} else {
 			erro("Esperado '{'","classBody");
 		}
 	}
 
-	private void memberDecl() {
+	private void memberDecl() { //analise semantica? @obede
 		if (tokenAtual == null) return;
 		boolean constructor = false;
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) { // construtor
+			String name = tokenAtual.getLexema();
 			constructor = true;
 			int pos_ant = this.pos;
 			consumir("memberDecl");
 			if (match("(")){
+				if (!name.equals(PilhaEscopo.getLastEscopo().name)){
+					System.out.println("Construtor não válido");
+				}
 				formalParameters();
 				block();
 			} else {
@@ -186,6 +237,8 @@ public class AnalizadorSintatico {
 				erro("Esperado um <identificador>","memberDecl");
 			}
 		} else if (!constructor){
+			String type = getObjectName();
+			boolean isArray = isArray();
 			type();
 			int pos_ant = this.pos;
 			if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {// nvoid
@@ -200,7 +253,7 @@ public class AnalizadorSintatico {
 				} else {
 					this.pos = pos_ant - 1;
 					consumir("memberDecl_backtracking");
-					variableDeclarators();
+					variableDeclarators(type, isArray);
 					if (match(";")) {
 						consumir("memberDecl");
 					} else {
@@ -220,10 +273,12 @@ public class AnalizadorSintatico {
 		} else {
 			erro("Esperado '{'","block");
 		}
+		createEscopo("block");
 		while (!match("}")) {
 			blockStatement();
 		}
 		if (match("}")) {
+			removeEscopo();
 			consumir("block");
 		} else {
 			erro("Esperado '}'","block");
@@ -239,7 +294,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private boolean isLocalVariableDeclaratiomStatement() { // conferir
+	private boolean isLocalVariableDeclaratiomStatement() {
 		boolean isLocalVD = false;
 		int pos_ant = this.pos;
 		if (isBasicType()){
@@ -274,7 +329,7 @@ public class AnalizadorSintatico {
 
 	}
 
-	private void statement() {
+	private void statement() { //analise semantica @obede
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			block();
@@ -331,18 +386,49 @@ public class AnalizadorSintatico {
 			erro("Esperado ')'","formalParameters");
 		}
 	}
+	
+	public TIPO_DADOS getType(String type, boolean isArray){
+		if (isArray){
+			if (type.equals("int")){
+				return TIPO_DADOS.INT_ARRAY;
+			} else if (type.equals("char")){
+				return TIPO_DADOS.CHAR_ARRAY;
+			} else if (type.equals("boolean")){
+				return TIPO_DADOS.BOOLEAN_ARRAY;
+			} else if (type.equals("String")){
+				return TIPO_DADOS.STRING_ARRAY;
+			} else {
+				return TIPO_DADOS.OBJECT_ARRAY;
+			}
+		} else {
+			if (type.equals("int")){
+				return TIPO_DADOS.INT;
+			} else if (type.equals("char")){
+				return TIPO_DADOS.CHAR;
+			} else if (type.equals("boolean")){
+				return TIPO_DADOS.BOOLEAN;
+			} else if (type.equals("String")){
+				return TIPO_DADOS.STRING;
+			} else {
+				return TIPO_DADOS.OBJECT;
+			}
+		}
+	}
 
 	private void formalParameter() {
 		if (tokenAtual == null) return;
+		String type = getObjectName();
+		boolean isArray = isArray();
 		type();
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+			insertTabela(tokenAtual.getLexema(), type, isArray);
 			consumir("formalParameter");
 		} else {
 			erro("Esperado <identificador>","formalParameter");
 		}
 	}
 
-	private void parExpression() {
+	private void parExpression() { //analiss semantica @obede
 		if (tokenAtual == null) return;
 		if (match("(")) {
 			consumir("parExpression");
@@ -359,8 +445,10 @@ public class AnalizadorSintatico {
 
 	private void localVariableDeclaratiomStatement() {
 		if (tokenAtual == null) return;
+		String type = getObjectName();
+		boolean isArray = isArray();
 		type();
-		variableDeclarators();
+		variableDeclarators(type, isArray);
 		if (match(";")) {
 			consumir("localVariableDeclaratiomStatement");
 		} else {
@@ -368,22 +456,24 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void variableDeclarators() {
+	private void variableDeclarators(String type,boolean isArray) {
 		if (tokenAtual == null) return;
-		variableDeclarator();
+		variableDeclarator(type, isArray);
 		while (match(",")) {
 			consumir("variableDeclarators");
-			variableDeclarator();
+			variableDeclarator(type, isArray);
 		}
 	}
 
-	private void variableDeclarator() {
+	private void variableDeclarator(String type, boolean isArray) {
  		if (tokenAtual == null) return;
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+			insertTabela(tokenAtual.getLexema(), type, isArray);
 			consumir("variableDeclarator");
 			if (match("=")) {
 				consumir("variableDeclarator");
 				variableInitializer();
+				// analise semantica - inserir valor na tablea de valores @obede
 			}
 		} else {
 			erro("Esperado <identificador>","variableDeclarator");
@@ -391,6 +481,7 @@ public class AnalizadorSintatico {
 	}
 
 	private void variableInitializer() {
+		// analise semantica - inserir valor na tablea de valores @obede
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			arrayInitializer();
@@ -399,7 +490,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void arrayInitializer() {
+	private void arrayInitializer() { //@obede : anaslise semantica
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			consumir("arrayInitializer");
@@ -508,17 +599,17 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void statementExpression() {
+	private void statementExpression() { //@obede
 		if (tokenAtual == null) return;
 		expression();
 	}
 
-	private void expression() {
+	private void expression() { //@obede
 		if (tokenAtual == null) return;
 		assignmentExpression();
 	}
 
-	private void assignmentExpression() {
+	private void assignmentExpression() { //@obede
 		if (tokenAtual == null) return;
 		conditionalAndExpression();
 		if (match("=") || match("+=")) {
@@ -527,7 +618,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void conditionalAndExpression() {
+	private void conditionalAndExpression() { //@obede
 		if (tokenAtual == null) return;
 		equalityExpression();
 		while (match("&&")) {
@@ -536,7 +627,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void equalityExpression() {
+	private void equalityExpression() { //@obede
 		if (tokenAtual == null) return;
 		relationalExpression();
 		while (match("==")) {
@@ -545,7 +636,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void relationalExpression() {
+	private void relationalExpression() { //@obede
 		if (tokenAtual == null) return;
 		additiveExpression();
 		if (match(">") || match("<=")) {
@@ -557,7 +648,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void additiveExpression() {
+	private void additiveExpression() { //@obede
 		if (tokenAtual == null) return;
 		multiplicativeExpression();
 		while (match("+") || match("-")) {
@@ -566,7 +657,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void multiplicativeExpression() {
+	private void multiplicativeExpression() { //@obede
 		if (tokenAtual == null) return;
 		unaryExpression();
 		while (match("*")) {
@@ -575,7 +666,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void unaryExpression() {
+	private void unaryExpression() { //@obede
 		if (tokenAtual == null) return;
 		if (match("++")) {
 			consumir("unaryExpression");
@@ -629,7 +720,7 @@ public class AnalizadorSintatico {
 		return isCast;
 	}
 
-	private void simpleUnaryExpression() {
+	private void simpleUnaryExpression() { //@obede
 		if (tokenAtual == null) return;
 		if (match("!")) {
 			consumir("simpleUnaryExpression");
@@ -659,7 +750,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void postfixExpression() {
+	private void postfixExpression() { //@obede
 		if (tokenAtual == null) return;
 		primary();
 		while (match(".") || match("[")) {
@@ -670,7 +761,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void selector() {
+	private void selector() { //voltar
 		if (tokenAtual == null) return;
 		if (match(".")) {
 			consumir("selector");
@@ -691,7 +782,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void primary() {
+	private void primary() { //voltar
 		if (tokenAtual == null) return;
 		if (match("(")) {
 			parExpression();
@@ -730,7 +821,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void creator() {
+	private void creator() { //voltar
 		if (tokenAtual == null) return;
 		if (match("boolean") || match("int") || match("char")) {
 			basicType();
@@ -763,7 +854,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void newArrayDeclarator() {
+	private void newArrayDeclarator() { //voltar
 		if (tokenAtual == null) return;
 		if (match("[")) {
 			consumir("newArrayDeclarator");
@@ -795,29 +886,65 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void literal() {
-		if (tokenAtual == null) return;
+	private TIPO_DADOS literal() {
+		if (tokenAtual == null) return null;
 		if (((Token)tokenAtual).cod == TOKEN_CODIGO.INT_LITERAL) {
 			consumir("literal");
+			return TIPO_DADOS.INT;
 		} else if (((Token)tokenAtual).cod == TOKEN_CODIGO.CHAR_LITERAL) {
 			consumir("literal");
+			return TIPO_DADOS.CHAR;
 		} else if (((Token)tokenAtual).cod == TOKEN_CODIGO.STRING_LITERAL) {
 			consumir("literal");
+			return TIPO_DADOS.STRING;
 		} else if (match("true")) {
 			consumir("literal");
+			return TIPO_DADOS.BOOLEAN;
 		} else if (match("false")) {
 			consumir("literal");
+			return TIPO_DADOS.BOOLEAN;
 		} else if (match("null")) {
 			consumir("literal");
+			return TIPO_DADOS.NULL;
 		} else {
 			erro("Esperado <literal>","literal");
-		}
+			return null;
+		}		
 	}
 
+	
+	//------------------------------------------------------
+	
+	
 	public static void main(String[] args) {
 		AnalizadorSintatico as = new AnalizadorSintatico("entradas/SyntaxErrors.txt");
+		//AnalizadorSintatico as = new AnalizadorSintatico("entradas/entrada_certa.txt");
 		as.analizar();
 		as.mostrarErros();
+	}
+	
+	public void analizar() {
+		compilationUnit();
+	}
+	
+	private void mostrarErros(){
+		if (erros.size() == 0){
+			System.out.println("\n\n\n******* Não há erros *************");
+		}
+		for (ErroSintatico e : this.erros){
+			System.out.println(e);
+		}
+		System.exit(0);
+	}
+
+	public AnalizadorSintatico(String entrada) {
+		tokens = new Lexico(entrada).getAllTokens();
+		this.pos = 0;
+		tokenAtual = tokens.get(0);
+		erros = new ArrayList<>();
+//		for (IToken t : tokens){
+//			System.out.println(t);
+//		}
 	}
 	
 	public String toString(){

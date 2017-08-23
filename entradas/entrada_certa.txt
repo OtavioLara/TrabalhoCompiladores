@@ -9,12 +9,12 @@ abstract public class Animal {
 
 public class Dog extends Animal {
 	// qtde de cachorros instanciados 
-	public static final Integer qtde = 0;
+	public static int qtde;
 	private int idade;
 	
 	Dog (){
 		this.idade = qtde * 7;
-		qtde++;
+		++qtde;
 		if (qtde == 1000){
 			System.out.println("Milesimo");
 		}
@@ -49,7 +49,7 @@ public class Pitbull extends Dog {
 	
 }
 
-public class Main (){
+public class Main {
 	public static void main ( String [] args ) {
 		char tipo = 'a';
 		Animal pitbull = new Pitbull();

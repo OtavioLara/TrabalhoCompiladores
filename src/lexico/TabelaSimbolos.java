@@ -23,7 +23,7 @@ public class TabelaSimbolos {
 	public String toString() {
 		StringBuilder str = new StringBuilder();
 		Set<String> indentificadores = memoria.keySet();
-		str.append("Indentificador | Posição \n");
+		str.append("Indentificador | PosiÃ§Ã£o \n");
 		for(String ident : indentificadores){
 			str.append(ident+" : "+memoria.get(ident)+"\n");
 		}

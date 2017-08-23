@@ -26,4 +26,13 @@ public class Escopo {
 		var.posMemoria = posMemoria;
 		variaveis.add(var);
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder st = new StringBuilder();
+		for (Variavel v : variaveis){
+			st.append(v);
+		}
+		return "\n\n\t\t" + name  + "\n\n"+ st.toString();
+	}
 }

@@ -10,7 +10,7 @@ import lexico.IToken;
 import lexico.Lexico;
 import lexico.Token;
 
-public class AnalizadorSintatico {
+public class AnalizadorSemantico {
 	private IToken tokenAtual;
 	private ArrayList<IToken> tokens;
 	private int pos;
@@ -21,13 +21,13 @@ public class AnalizadorSintatico {
 	//-----------------------
 
 	public void consumir(String s) {
-//		System.out.println(tokenAtual + " " + s);
+		//System.out.println(tokenAtual + " " + s);
 		this.pos++;
 		if (pos < tokens.size()) {
 			tokenAtual = tokens.get(this.pos);
 		} else {
 			tokenAtual = null;
-			mostrarErros();
+			//mostrarErros();
 		}
 	}
 
@@ -86,8 +86,8 @@ public class AnalizadorSintatico {
 		this.indexEscopo = PilhaEscopo.insertEscopo(esc);
 	}
 	
-	public void insertTabela(String lexema, String type, boolean isArray){
-		this.tabela.insert(lexema, PilhaEscopo.getLastEscopo(), getType(type, isArray));
+	public void insertTabela(String lexema, TIPO_DADOS type){
+		this.tabela.insert(lexema, PilhaEscopo.getLastEscopo(), type);
 	}
 	
 	public void removeEscopo(){
@@ -96,7 +96,8 @@ public class AnalizadorSintatico {
 	
 	//--------------------------------------------
 
-	private void compilationUnit() {
+	private void compilationUnit() { //ok
+		
 		createEscopo("GLOBAL");
 //		insertTabela("String", "String"); @obede: tabela de import
 		
@@ -127,6 +128,7 @@ public class AnalizadorSintatico {
 		}
 
 		if (match("EOF")) {
+			System.out.println(tabela);
 			removeEscopo();
 			consumir("compilationUnit");
 			return;
@@ -135,7 +137,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void qualifiedIdentifier() {
+	private void qualifiedIdentifier() { //ok
 		if (tokenAtual == null) return;
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 			consumir("qualifiedIdentifier");
@@ -150,20 +152,20 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void typeDeclaration() {
+	private void typeDeclaration() { //ok
 		if (tokenAtual == null) return;
 		modifiers();
 		classDeclaration();
 	}
 
-	private void modifiers() {
+	private void modifiers() { //ok
 		if (tokenAtual == null) return;
 		while (match("public") || match("private") || match("protected") || match("abstract") || match("static")) {
 			consumir("modifier");
 		}
 	}
 
-	private void classDeclaration() {
+	private void classDeclaration() { //ok
 		if (tokenAtual == null) return;
 		if (match("class")) {
 			consumir("classDeclaration");
@@ -184,7 +186,7 @@ public class AnalizadorSintatico {
 		classBody();
 	}
 
-	private void classBody() {
+	private void classBody() { //ok
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			consumir("classBody");
@@ -193,7 +195,7 @@ public class AnalizadorSintatico {
 		}
 		while (!match("}")) {
 			modifiers();
-			memberDecl();
+			memberDecl(); //colocalos em lista ?? @obede
 		}
 		if (match("}")) {
 			consumir("classBody");
@@ -203,10 +205,10 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void memberDecl() { //analise semantica? @obede
+	private void memberDecl() { //ok
 		if (tokenAtual == null) return;
 		boolean constructor = false;
-		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) { // construtor
+		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 			String name = tokenAtual.getLexema();
 			constructor = true;
 			int pos_ant = this.pos;
@@ -216,7 +218,7 @@ public class AnalizadorSintatico {
 					System.out.println("Construtor não válido");
 				}
 				formalParameters();
-				block();
+				block(TIPO_DADOS.NONE);
 			} else {
 				this.pos = pos_ant - 1;
 				consumir("memberDecl_backtracking");
@@ -231,7 +233,7 @@ public class AnalizadorSintatico {
 				if (match(";")) {
 					consumir("memberDecl");
 				} else {
-					block();
+					block(TIPO_DADOS.NONE);
 				}
 			} else {
 				erro("Esperado um <identificador>","memberDecl");
@@ -239,6 +241,7 @@ public class AnalizadorSintatico {
 		} else if (!constructor){
 			String type = getObjectName();
 			boolean isArray = isArray();
+			TIPO_DADOS esperada = getType(type, isArray);
 			type();
 			int pos_ant = this.pos;
 			if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {// nvoid
@@ -248,12 +251,12 @@ public class AnalizadorSintatico {
 					if (match(";")) {
 						consumir("memberDecl");
 					} else {
-						block();
+						block(esperada);
 					}
 				} else {
 					this.pos = pos_ant - 1;
-					consumir("memberDecl_backtracking");
-					variableDeclarators(type, isArray);
+					consumir("memberDecl_backtracking"); //field
+					variableDeclarators(esperada);
 					if (match(";")) {
 						consumir("memberDecl");
 					} else {
@@ -266,7 +269,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void block() {
+	private void block(TIPO_DADOS esperado) { //ok
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			consumir("block");
@@ -275,7 +278,7 @@ public class AnalizadorSintatico {
 		}
 		createEscopo("block");
 		while (!match("}")) {
-			blockStatement();
+			blockStatement(esperado);
 		}
 		if (match("}")) {
 			removeEscopo();
@@ -285,28 +288,28 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void blockStatement() {
+	private void blockStatement(TIPO_DADOS esperado) { //ok
 		if (tokenAtual == null) return;
 		if (isLocalVariableDeclaratiomStatement()) {
 			localVariableDeclaratiomStatement();
 		} else {
-			statement();
+			statement(esperado);
 		}
 	}
 
-	private boolean isLocalVariableDeclaratiomStatement() {
+	private boolean isLocalVariableDeclaratiomStatement() { //ok
 		boolean isLocalVD = false;
 		int pos_ant = this.pos;
-		if (isBasicType()){
+		if (isBasicType()) {
 			isLocalVD = true;
-		} else if(match("char") || match("boolean") || match("int")){
-			consumir(""); //.
-			if (match("[")){
-				consumir("["); //.
-				if (match("]")){
+		} else if (match("char") || match("boolean") || match("int")) {
+			consumir(""); // .
+			if (match("[")) {
+				consumir("["); // .
+				if (match("]")) {
 					isLocalVD = true;
 				}
-			}			
+			}
 		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
 			consumir("OR");
 			while (match(".")) {
@@ -317,11 +320,11 @@ public class AnalizadorSintatico {
 			}
 			if (match("[")) {
 				consumir("");
-				if (match("]")){
+				if (match("]")) {
 					isLocalVD = true;
 				}
 			}
-			
+
 		}
 		this.pos = pos_ant - 1;
 		consumir("OK");
@@ -329,26 +332,29 @@ public class AnalizadorSintatico {
 
 	}
 
-	private void statement() { //analise semantica @obede
+	private void statement(TIPO_DADOS esperado) { //ok
 		if (tokenAtual == null) return;
 		if (match("{")) {
-			block();
+			block(esperado);
 		} else if (match("if")) {
 			consumir("statement");
-			parExpression();
-			statement();
+			parExpression(TIPO_DADOS.BOOLEAN);
+			statement(TIPO_DADOS.NONE);
 			if (match("else")) {
 				consumir("statement");
-				statement();
+				statement(TIPO_DADOS.NONE);
 			}
 		} else if (match("while")) {
 			consumir("statement");
-			parExpression();
-			statement();
+			parExpression(TIPO_DADOS.BOOLEAN);
+			statement(TIPO_DADOS.NONE);
 		} else if (match("return")) {
 			consumir("statement");
 			if (!match(";")) {
-				expression();
+				if (esperado == TIPO_DADOS.NONE){
+					System.out.println("Não é possível retornar nenhum valor" + tokenAtual);
+				}
+				expression(esperado);
 			}
 			if (match(";")) {
 				consumir("statement");
@@ -358,7 +364,7 @@ public class AnalizadorSintatico {
 		} else if (match(";")) {
 			consumir("statement");
 		} else {
-			statementExpression();
+			statementExpression(esperado);
 			if (match(";")) {
 				consumir("statement");
 			}
@@ -366,7 +372,7 @@ public class AnalizadorSintatico {
 
 	}
 
-	private void formalParameters() {
+	private void formalParameters() { //ok
 		if (tokenAtual == null) return;
 		if (match("(")) {
 			consumir("formalParameters");
@@ -387,7 +393,7 @@ public class AnalizadorSintatico {
 		}
 	}
 	
-	public TIPO_DADOS getType(String type, boolean isArray){
+	public TIPO_DADOS getType(String type, boolean isArray){ //ok
 		if (isArray){
 			if (type.equals("int")){
 				return TIPO_DADOS.INT_ARRAY;
@@ -415,24 +421,25 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void formalParameter() {
+	private void formalParameter() { //ok
 		if (tokenAtual == null) return;
 		String type = getObjectName();
 		boolean isArray = isArray();
+		TIPO_DADOS esperado = getType(type, isArray);
 		type();
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
-			insertTabela(tokenAtual.getLexema(), type, isArray);
+			insertTabela(tokenAtual.getLexema(), esperado);
 			consumir("formalParameter");
 		} else {
 			erro("Esperado <identificador>","formalParameter");
 		}
 	}
 
-	private void parExpression() { //analiss semantica @obede
+	private void parExpression(TIPO_DADOS esperado) { //ok
 		if (tokenAtual == null) return;
 		if (match("(")) {
 			consumir("parExpression");
-			expression();
+			expression(esperado);
 		} else {
 			erro("Esperado '('","parExpression");
 		}
@@ -443,12 +450,13 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void localVariableDeclaratiomStatement() {
+	private void localVariableDeclaratiomStatement() { //ok
 		if (tokenAtual == null) return;
 		String type = getObjectName();
 		boolean isArray = isArray();
+		TIPO_DADOS esperado = getType(type, isArray);
 		type();
-		variableDeclarators(type, isArray);
+		variableDeclarators(esperado);
 		if (match(";")) {
 			consumir("localVariableDeclaratiomStatement");
 		} else {
@@ -456,49 +464,49 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void variableDeclarators(String type,boolean isArray) {
-		if (tokenAtual == null) return;
-		variableDeclarator(type, isArray);
+	private void variableDeclarators(TIPO_DADOS esperado) { //ok
+		if (tokenAtual == null)
+			return;
+		variableDeclarator(esperado);
 		while (match(",")) {
 			consumir("variableDeclarators");
-			variableDeclarator(type, isArray);
+			variableDeclarator(esperado);
 		}
 	}
 
-	private void variableDeclarator(String type, boolean isArray) {
- 		if (tokenAtual == null) return;
+	private void variableDeclarator(TIPO_DADOS esperado) { //ok
+		if (tokenAtual == null)
+			return;
 		if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
-			insertTabela(tokenAtual.getLexema(), type, isArray);
+			insertTabela(tokenAtual.getLexema(), esperado);
 			consumir("variableDeclarator");
 			if (match("=")) {
 				consumir("variableDeclarator");
-				variableInitializer();
-				// analise semantica - inserir valor na tablea de valores @obede
+				variableInitializer(esperado);
 			}
 		} else {
-			erro("Esperado <identificador>","variableDeclarator");
+			erro("Esperado <identificador>", "variableDeclarator");
 		}
 	}
 
-	private void variableInitializer() {
-		// analise semantica - inserir valor na tablea de valores @obede
+	private void variableInitializer(TIPO_DADOS esperado) { //ok
 		if (tokenAtual == null) return;
 		if (match("{")) {
-			arrayInitializer();
+			arrayInitializer(esperado);
 		} else {
-			expression();
+			expression(esperado);
 		}
 	}
 
-	private void arrayInitializer() { //@obede : anaslise semantica
+	private void arrayInitializer(TIPO_DADOS esperado) { //ok
 		if (tokenAtual == null) return;
 		if (match("{")) {
 			consumir("arrayInitializer");
 			if (!match("}")) {
-				variableInitializer();
+				variableInitializer(esperado);
 				while (match(",")) {
 					consumir("arrayInitializer");
-					variableInitializer();
+					variableInitializer(esperado);
 				}
 			}
 			if (match("}")) {
@@ -511,15 +519,15 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void arguments() {
+	private void arguments() { //ok
 		if (tokenAtual == null) return;
 		if (match("(")) {
 			consumir("arguments");
 			if (!match(")")) {
-				expression();
+				expression(TIPO_DADOS.ANY);
 				while (match(",")) {
 					consumir("arguments");
-					expression();
+					expression(TIPO_DADOS.ANY);
 				}
 			}
 			if (match(")")) {
@@ -532,7 +540,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void type() {
+	private void type() { //ok
 		if (tokenAtual == null) return;
 		if (isBasicType()) {
 			basicType();
@@ -541,7 +549,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private boolean isBasicType() {
+	private boolean isBasicType() { //ok
 		boolean isBasicType = false;
 		int pos_ant = this.pos;
 		if (match("boolean") || match("char") || match("int")) {
@@ -555,7 +563,7 @@ public class AnalizadorSintatico {
 		return isBasicType;
 	}
 
-	private void basicType() {
+	private void basicType() { //ok
 		if (tokenAtual == null) return;
 		if (match("boolean") || match("char") || match("int")) {
 			consumir("basicType");
@@ -564,7 +572,7 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void referenceType() {
+	private void referenceType() { //ok
 		if (tokenAtual == null) return;
 		if (match("boolean") || match("int") || match("char")) {
 			basicType();
@@ -599,170 +607,219 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void statementExpression() { //@obede
-		if (tokenAtual == null) return;
-		expression();
+	private void statementExpression(TIPO_DADOS esperado) { // ok
+		if (tokenAtual == null)
+			return;
+		expression(esperado);
 	}
 
-	private void expression() { //@obede
-		if (tokenAtual == null) return;
-		assignmentExpression();
+	private void expression(TIPO_DADOS esperado) { //ok
+		if (tokenAtual == null)
+			return;
+		assignmentExpression(esperado);
 	}
 
-	private void assignmentExpression() { //@obede
-		if (tokenAtual == null) return;
-		conditionalAndExpression();
-		if (match("=") || match("+=")) {
+	private void assignmentExpression(TIPO_DADOS esperado) { //ok 
+		if (tokenAtual == null)
+			return;
+		conditionalAndExpression(esperado);
+		if (match("=")) {
 			consumir("assignmentExpression");
-			assignmentExpression();
+			assignmentExpression(esperado);
+		} else if (match("+=")) {
+			if (TIPO_DADOS.INT == esperado) {
+				System.out.println("Não é possível operações +=." + tokenAtual);
+			}
+			consumir("assignmentExpression");
+			assignmentExpression(TIPO_DADOS.INT);
 		}
 	}
 
-	private void conditionalAndExpression() { //@obede
-		if (tokenAtual == null) return;
-		equalityExpression();
+	private void conditionalAndExpression(TIPO_DADOS esperado) { // ok
+		if (tokenAtual == null)
+			return;
+		equalityExpression(esperado);
 		while (match("&&")) {
+			if (TIPO_DADOS.BOOLEAN == esperado) {
+				System.out.println("Não é possível operações &&." + tokenAtual);
+			}
 			consumir("conditionalAndExpression");
-			equalityExpression();
+			equalityExpression(TIPO_DADOS.BOOLEAN);
 		}
 	}
 
-	private void equalityExpression() { //@obede
-		if (tokenAtual == null) return;
-		relationalExpression();
+	private void equalityExpression(TIPO_DADOS esperado) { // ok
+		if (tokenAtual == null)
+			return;
+		relationalExpression(esperado);
 		while (match("==")) {
+			if (TIPO_DADOS.BOOLEAN == esperado) {
+				System.out.println("Não é possível ==." + tokenAtual);
+			}
 			consumir("equalityExpression");
-			relationalExpression();
+			relationalExpression(TIPO_DADOS.BOOLEAN);
 		}
 	}
 
-	private void relationalExpression() { //@obede
-		if (tokenAtual == null) return;
-		additiveExpression();
+	private void relationalExpression(TIPO_DADOS esperado) { // ok
+		if (tokenAtual == null)
+			return;
+		additiveExpression(esperado);
 		if (match(">") || match("<=")) {
+			if (TIPO_DADOS.BOOLEAN == esperado) {
+				System.out.println("Não é possível operações > ou <=." + tokenAtual);
+			}
 			consumir("relationalExpression");
-			additiveExpression();
+			additiveExpression(TIPO_DADOS.INT);
 		} else if (match("instanceof")) {
+			if (TIPO_DADOS.BOOLEAN == esperado) {
+				System.out.println("Não é possível operação instanceof" + tokenAtual);
+			}
 			consumir("relationalExpression");
 			referenceType();
 		}
 	}
 
-	private void additiveExpression() { //@obede
-		if (tokenAtual == null) return;
-		multiplicativeExpression();
+	private void additiveExpression(TIPO_DADOS esperado) { // ok
+		if (tokenAtual == null)
+			return;
+		multiplicativeExpression(esperado);
 		while (match("+") || match("-")) {
+			if (esperado != TIPO_DADOS.INT) {
+				System.out.println("Não é possível somar/subtrair não inteiros" + tokenAtual);
+			}
 			consumir("equalityExpression");
-			relationalExpression();
+			multiplicativeExpression(TIPO_DADOS.INT);
 		}
 	}
 
-	private void multiplicativeExpression() { //@obede
-		if (tokenAtual == null) return;
-		unaryExpression();
+	private void multiplicativeExpression(TIPO_DADOS esperado) { //ok
+		if (tokenAtual == null)
+			return;
+		unaryExpression(esperado);
 		while (match("*")) {
+			if (esperado == TIPO_DADOS.INT) {
+				System.out.println("Não é possível multiplicar não inteiros" + tokenAtual);
+			}
 			consumir("multiplicativeExpression");
-			unaryExpression();
+			unaryExpression(TIPO_DADOS.INT);
 		}
 	}
 
-	private void unaryExpression() { //@obede
-		if (tokenAtual == null) return;
+	private void unaryExpression(TIPO_DADOS esperado) { // ok
+		if (tokenAtual == null)
+			return;
 		if (match("++")) {
 			consumir("unaryExpression");
-			unaryExpression();
+			unaryExpression(TIPO_DADOS.INT);
 		} else if (match("-")) {
 			consumir("unaryExpression");
-			unaryExpression();
+			unaryExpression(TIPO_DADOS.INT);
 		} else {
-			simpleUnaryExpression();
+			simpleUnaryExpression(esperado);
 		}
 	}
 	
-	public boolean isCast(){
+	public boolean isCast() {
 		int pos_ant = this.pos;
 		boolean isCast = false;
-		consumir("("); //(
-		if (isBasicType()){
+		consumir("("); // (
+		if (isBasicType()) {
 			consumir(""); // basicType
-			if (match(")")){
+			if (match(")")) {
 				isCast = true;
 			}
-		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR){
-			consumir(""); //.
-			while(match(".")){
-				consumir("."); //.
-				consumir("<id>");	
+		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+			consumir(""); // .
+			while (match(".")) {
+				consumir("."); // .
+				consumir("<id>");
 			}
-			while(match("[")){
-				consumir("["); //.
+			while (match("[")) {
+				consumir("["); // .
 				consumir("]");
 			}
-			if (match(")")){
+			if (match(")")) {
 				isCast = true;
 			}
-		} else if(match("char") || match("boolean") || match("int")){
-			consumir(""); //.
-			if (match("[")){
-				consumir("["); //.
+		} else if (match("char") || match("boolean") || match("int")) {
+			consumir(""); // .
+			if (match("[")) {
+				consumir("["); // .
 				consumir("]");
-				while (match("[")){
-					consumir("["); //.
-					consumir("]");	
+				while (match("[")) {
+					consumir("["); // .
+					consumir("]");
 				}
-				if (match(")")){
+				if (match(")")) {
 					isCast = true;
 				}
-			}			
-		}		
+			}
+		}
 		this.pos = pos_ant - 1;
 		consumir("isCast");
 		return isCast;
 	}
 
-	private void simpleUnaryExpression() { //@obede
-		if (tokenAtual == null) return;
+	private void simpleUnaryExpression(TIPO_DADOS esperado) { // ok
+		if (tokenAtual == null)
+			return;
 		if (match("!")) {
 			consumir("simpleUnaryExpression");
-			unaryExpression();
+			unaryExpression(TIPO_DADOS.ANY);
 		} else if (match("(") && isCast()) {
 			consumir("simpleUnaryExpression");
 			if (isBasicType()) {
+				String type = getObjectName();
+				TIPO_DADOS create = getType(type, false);
+				if (create != esperado) {
+					System.out.println("Cast não premitido" + tokenAtual);
+				}
 				basicType();
 				consumir("simpleUnaryExpression");
 				if (match(")")) {
 					consumir("simpleUnaryExpression");
-					unaryExpression();
+					unaryExpression(esperado);
 				} else {
-					erro("Esperado ')'","simpleUnaryExpression");
+					erro("Esperado ')'", "simpleUnaryExpression");
 				}
 			} else {
+				String type = getObjectName();
+				boolean isArray = isArray();
+				TIPO_DADOS create = getType(type, isArray);
+				if (create != esperado) {
+					System.out.println("Cast não premitido" + tokenAtual);
+				}
 				referenceType();
 				if (match(")")) {
 					consumir("simpleUnaryExpression");
-					simpleUnaryExpression();
+					simpleUnaryExpression(esperado);
 				} else {
-					erro("Esperado ')'","simpleUnaryExpression");
+					erro("Esperado ')'", "simpleUnaryExpression");
 				}
 			}
 		} else {
-			postfixExpression();
+			postfixExpression(esperado);
 		}
 	}
 
-	private void postfixExpression() { //@obede
+	private void postfixExpression(TIPO_DADOS esperado) {
 		if (tokenAtual == null) return;
-		primary();
-		while (match(".") || match("[")) {
+		primary(esperado);
+		while (match(".") || match("[")) { //é array ou objeto
 			selector();
 		}
 		while (match("--")) {
+			if (esperado != TIPO_DADOS.INT){
+				System.out.println("Operação não permitida --" + tokenAtual);
+			}
 			consumir("postifixExpression");
 		}
 	}
 
-	private void selector() { //voltar
-		if (tokenAtual == null) return;
+	private void selector() { //ok
+		if (tokenAtual == null)
+			return;
 		if (match(".")) {
 			consumir("selector");
 			qualifiedIdentifier();
@@ -771,21 +828,22 @@ public class AnalizadorSintatico {
 			}
 		} else if (match("[")) {
 			consumir("selector");
-			expression();
+			expression(TIPO_DADOS.INT);
 			if (match("]")) {
 				consumir("selector");
 			} else {
-				erro("Esperado ']'","selector");
+				erro("Esperado ']'", "selector");
 			}
 		} else {
-			erro("Esperado '.' ou '['","selector");
+			erro("Esperado '.' ou '['", "selector");
 		}
 	}
 
-	private void primary() { //voltar
-		if (tokenAtual == null) return;
+	private void primary(TIPO_DADOS esperado) {
+		if (tokenAtual == null)
+			return;
 		if (match("(")) {
-			parExpression();
+			parExpression(esperado);
 		} else if (match("this")) {
 			consumir("primary");
 			if (match("(")) {
@@ -797,32 +855,42 @@ public class AnalizadorSintatico {
 				arguments();
 			} else if (match(".")) {
 				consumir("primary");
-				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+				if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) { // verificar se tem no super @obede
 					consumir("primary");
 				} else {
-					erro("Esperado <identificador>","primary");
+					erro("Esperado <identificador>", "primary");
 				}
 				if (match("(")) {
 					arguments();
 				}
 			} else {
-				erro("Esperado '(' ou '.'","primary");
+				erro("Esperado '(' ou '.'", "primary");
 			}
 		} else if (match("new")) {
 			consumir("primary");
-			creator();
+			creator(esperado);
+
 		} else if (tokenAtual.tokenTipo() == TOKEN_CODIGO.IDENTIFICADOR) {
+			String name = getObjectName();
+			System.out.println(tabela.buscar(name));
 			qualifiedIdentifier();
 			if (match("(")) {
 				arguments();
 			}
 		} else {
-			literal();
+			literal(esperado);
 		}
 	}
 
-	private void creator() { //voltar
-		if (tokenAtual == null) return;
+	private void creator(TIPO_DADOS esperado) {// ok
+		if (tokenAtual == null)
+			return;
+		String type = getObjectName();
+		boolean isArray = isArray();
+		TIPO_DADOS typeCreate = getType(type, isArray);
+		if (typeCreate != esperado) {
+			System.out.println("Tipo inesperado" + tokenAtual);
+		}
 		if (match("boolean") || match("int") || match("char")) {
 			basicType();
 		} else {
@@ -840,11 +908,11 @@ public class AnalizadorSintatico {
 					if (match("]")) {
 						consumir("creator");
 					} else {
-						erro("Esperado ']'","creator");
+						erro("Esperado ']'", "creator");
 					}
 				}
 				if (match("{")) {
-					arrayInitializer();
+					arrayInitializer(esperado);
 				}
 			} else {
 				this.pos = pos_ant - 1;
@@ -854,26 +922,27 @@ public class AnalizadorSintatico {
 		}
 	}
 
-	private void newArrayDeclarator() { //voltar
-		if (tokenAtual == null) return;
+	private void newArrayDeclarator() { // ok
+		if (tokenAtual == null)
+			return;
 		if (match("[")) {
 			consumir("newArrayDeclarator");
-			expression();
+			expression(TIPO_DADOS.INT);
 		} else {
-			erro("Esperado '['","newArrayDeclarator");
+			erro("Esperado '['", "newArrayDeclarator");
 		}
 		if (match("]")) {
 			consumir("newArrayDeclarator");
 		} else {
-			erro("Esperado ']'","newArrayDeclarator");
+			erro("Esperado ']'", "newArrayDeclarator");
 		}
 		while (match("[")) {
 			consumir("newArrayDeclarator");
-			expression();
+			expression(TIPO_DADOS.INT);
 			if (match("]")) {
 				consumir("newArrayDeclarator");
 			} else {
-				erro("Esperado ']'","newArrayDeclarator");
+				erro("Esperado ']'", "newArrayDeclarator");
 			}
 		}
 		while (match("[")) {
@@ -881,35 +950,48 @@ public class AnalizadorSintatico {
 			if (match("]")) {
 				consumir("newArrayDeclarator");
 			} else {
-				erro("Esperado ']'","newArrayDeclarator");
+				erro("Esperado ']'", "newArrayDeclarator");
 			}
 		}
 	}
 
-	private TIPO_DADOS literal() {
-		if (tokenAtual == null) return null;
-		if (((Token)tokenAtual).cod == TOKEN_CODIGO.INT_LITERAL) {
+	private void literal(TIPO_DADOS esperado) { //ok
+		if (tokenAtual == null)
+			return;
+		if (((Token) tokenAtual).cod == TOKEN_CODIGO.INT_LITERAL) {
+			if (TIPO_DADOS.ANY != esperado && TIPO_DADOS.INT != esperado) {
+				System.out.println("Esperado int" + tokenAtual);
+			}
 			consumir("literal");
-			return TIPO_DADOS.INT;
-		} else if (((Token)tokenAtual).cod == TOKEN_CODIGO.CHAR_LITERAL) {
+		} else if (((Token) tokenAtual).cod == TOKEN_CODIGO.CHAR_LITERAL) {
+			if (TIPO_DADOS.ANY != esperado && TIPO_DADOS.CHAR != esperado) {
+				System.out.println("Esperado char" + tokenAtual);
+			}
 			consumir("literal");
-			return TIPO_DADOS.CHAR;
-		} else if (((Token)tokenAtual).cod == TOKEN_CODIGO.STRING_LITERAL) {
+		} else if (((Token) tokenAtual).cod == TOKEN_CODIGO.STRING_LITERAL) {
+			if (TIPO_DADOS.ANY != esperado && TIPO_DADOS.STRING != esperado) {
+				System.out.println("Esperado String" + tokenAtual);
+			}
 			consumir("literal");
-			return TIPO_DADOS.STRING;
 		} else if (match("true")) {
+			if (TIPO_DADOS.ANY != esperado && TIPO_DADOS.BOOLEAN != esperado) {
+				System.out.println("Esperado boolean" + tokenAtual);
+			}
 			consumir("literal");
-			return TIPO_DADOS.BOOLEAN;
 		} else if (match("false")) {
+			if (TIPO_DADOS.ANY != esperado && TIPO_DADOS.BOOLEAN != esperado) {
+				System.out.println("Esperado boolean" + tokenAtual);
+			}
 			consumir("literal");
-			return TIPO_DADOS.BOOLEAN;
 		} else if (match("null")) {
+			if (TIPO_DADOS.ANY != esperado && TIPO_DADOS.NULL != esperado) {
+				System.out.println("Esperado null" + tokenAtual);
+			}
 			consumir("literal");
-			return TIPO_DADOS.NULL;
 		} else {
-			erro("Esperado <literal>","literal");
-			return null;
-		}		
+			erro("Esperado <literal>", "literal");
+			return;
+		}
 	}
 
 	
@@ -917,10 +999,10 @@ public class AnalizadorSintatico {
 	
 	
 	public static void main(String[] args) {
-		AnalizadorSintatico as = new AnalizadorSintatico("entradas/SyntaxErrors.txt");
+		AnalizadorSemantico as = new AnalizadorSemantico("entradas/SyntaxErrors.txt");
 		//AnalizadorSintatico as = new AnalizadorSintatico("entradas/entrada_certa.txt");
 		as.analizar();
-		as.mostrarErros();
+		//as.mostrarErros();
 	}
 	
 	public void analizar() {
@@ -937,7 +1019,7 @@ public class AnalizadorSintatico {
 		System.exit(0);
 	}
 
-	public AnalizadorSintatico(String entrada) {
+	public AnalizadorSemantico(String entrada) {
 		tokens = new Lexico(entrada).getAllTokens();
 		this.pos = 0;
 		tokenAtual = tokens.get(0);
@@ -947,7 +1029,7 @@ public class AnalizadorSintatico {
 //		}
 	}
 	
-	public String toString(){
+	public String toString(){ //deletar
 		return tokenAtual.getLine() + "";
 	}
 }

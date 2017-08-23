@@ -10,7 +10,7 @@ import semantica.ConstantesSemantica.TIPO_DADOS;
 public class TabelaSimbolosSemantica {
 
 	
-	private static Integer posicaoMemoria = 0;
+	private static int posicaoMemoria = 0;
 	
 	private static HashMap<String, Simbolo> memoria = new HashMap<>();
 	
@@ -19,14 +19,12 @@ public class TabelaSimbolosSemantica {
 		if (simbolo == null){
 			simbolo = new Simbolo();
 			simbolo.posMemoria = posicaoMemoria;
-			if (escopo == null){
-				
-			}
 			escopo.insertVariavel(identificador, posicaoMemoria);
 			posicaoMemoria ++;
 			simbolo.escopo = escopo;
 			//simbolo.token = token;
 			simbolo.tipo = tipo;
+			simbolo.identificador = identificador;
 			memoria.put(identificador, simbolo);			
 			return simbolo;
 		}
@@ -43,19 +41,25 @@ public class TabelaSimbolosSemantica {
 	public String toString() {
 		StringBuilder str = new StringBuilder();
 		Set<String> indentificadores = memoria.keySet();
-		str.append("Indentificador | Posição \n");
+		str.append("\n\n\t\tTabela Símbolos\n\n");
 		for(String ident : indentificadores){
-			str.append(ident+" : "+memoria.get(ident)+"\n");
+			str.append(memoria.get(ident)+"\n");
 		}
 		return str.toString();
 	}
 	
 	public class Simbolo{
 		//public IToken token;
-		public Integer posMemoria;
+		public String identificador;
+		public int posMemoria;
 		public TIPO_DADOS tipo;
 		public Escopo escopo;
-		public String valor;
+		//public String valor;
+		
+		@Override
+		public String toString() {
+			return "ID: " + identificador + ", memoria: " + posMemoria + ",Tipo: " + tipo;
+		}
 		
 	}
 
